@@ -1,8 +1,59 @@
-<html>
-  <head>
-    <title>Personal Website</title>
-  </head>
-  <body>
-    <h2><a href="/bingo">C'est ça que tu cherches</a></h2>
-  </body>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabary Lucas | Étudiant Ingénieur</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Tabary Lucas</h1>
+        <p class="subtitle">Étudiant Ingénieur en Informatique @ Telecom Nancy</p>
+        <div class="links">
+            <a href="mailto:lucas.tabary01@gmail.com">Email</a>
+            <a href="https://www.linkedin.com/in/lucas-tabary-1a4a22352/" target="_blank">LinkedIn</a>
+            <a href="https://github.com/lucastabary" target="_blank">GitHub</a>
+        </div>
+    </header>
+
+    <section id="research-interests">
+        <h2>Centres d'intérêt scientifique</h2>
+        <ul>
+            <li><strong>Machine Learning :</strong> Réseaux de neurones artificiels, apprentissage supervisé et non-supervisé.</li>
+            <li><strong>Neurosciences Computationnelles :</strong> Modélisation des processus cognitifs et étude des analogies entre réseaux biologiques et architectures artificielles (RNN, Spiking Neural Networks).</li>
+            <li><strong>Théorie Algébrique des Graphes :</strong> Théorie mathématique abstraite et utilisation des propriétés spectrales (Laplacien, spectre d'adjacence) en Geometric Deep Learning et optimisation des réseaux de neurones sur graphes.</li>
+        </ul>
+    </section>
+
+    <section id="selected-projects">
+        <h2>Travaux de recherche & Projets</h2>
+        
+        <div class="research-item">
+            <div class="project-header">
+                <h3>Génération musicale symbolique par réseaux de neurones récurrents</h3>
+                <a href="https://github.com/lucastabary/Project4/" class="project-btn">Voir le projet →</a>
+            </div>
+            <p class="meta">Projet Personnel</p>
+            <p>Étude des architectures LSTM pour la génération de séquences MIDI. Analyse des capacités du modèle à capturer les structures temporelles à long terme dans des corpus de musique classique.</p>
+        </div>
+
+        <div class="research-item">
+             <div class="project-header">
+                <h3>Analyse de spectroscopie proche infrarouge de spécimens végétaux</h3>
+                <a href="https://github.com/lucastabary/PIDR_RICOCHET" class="project-btn">Voir le projet →</a>
+            </div>
+            <p class="meta">Projet d'Initiation à la Recherche • Telecom Nancy</p>
+            <p>Exploration d'espace latent de mesures NIRS appliqués à la caractérisation chimique de spécimens végétaux. Utilisation de techniques de réduction de dimension (PCA, t-SNE, VAE) avant classification.</p>
+        </div>
+    </section>
+
+    <footer>
+        <p>Dernière mise à jour : Février 2026</p>
+    </footer>
+</div>
+
+</body>
 </html>

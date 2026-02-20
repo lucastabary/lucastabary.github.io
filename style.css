@@ -1,0 +1,193 @@
+/* --- Reset et Base --- */
+:root {
+    /* Palette de couleurs sobre et professionnelle */
+    --bg-color: #fafafa;
+    --text-color: #333;
+    --text-light: #666;
+    --accent-color: #0056b3;
+    /* Un bleu un peu plus profond, plus académique */
+    --border-color: #e0e0e0;
+}
+
+body {
+    /* Utilisation d'une police Serif pour le corps du texte (lecture académique) */
+    font-family: Georgia, "Times New Roman", Times, serif;
+    line-height: 1.7;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    margin: 0;
+    padding: 40px 20px;
+}
+
+/* Utilisation d'une police Sans-Serif pour les titres (aspect plus technique/moderne) */
+h1,
+h2,
+h3,
+.links,
+.meta,
+.project-btn {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.container {
+    max-width: 840px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 40px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+    /* Légère ombre pour du relief */
+    border-radius: 4px;
+}
+
+/* --- Header --- */
+header {
+    margin-bottom: 50px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 30px;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: #111;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.subtitle {
+    font-size: 1.15rem;
+    color: var(--text-light);
+    font-weight: 300;
+    margin-top: 0;
+}
+
+.links {
+    margin-top: 20px;
+    font-size: 0.95rem;
+}
+
+.links a {
+    color: var(--accent-color);
+    text-decoration: none;
+    margin-right: 15px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.links a:hover {
+    color: #003d82;
+    text-decoration: underline;
+}
+
+/* --- Sections --- */
+h2 {
+    font-size: 1.3rem;
+    /* Design plus subtil que la grosse barre noire */
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    margin-top: 50px;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #444;
+    font-weight: 600;
+}
+
+#research-interests ul {
+    padding-left: 20px;
+}
+
+#research-interests li {
+    margin-bottom: 12px;
+}
+
+/* --- Projets (Travaux) --- */
+.research-item {
+    margin-bottom: 40px;
+    border-bottom: 1px dotted var(--border-color);
+    /* Séparateur subtil entre projets */
+    padding-bottom: 25px;
+}
+
+.research-item:last-child {
+    border-bottom: none;
+}
+
+/* Nouvelle structure Flex pour le titre et le bouton */
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    /* Aligne en haut si le titre passe sur 2 lignes */
+    gap: 20px;
+    margin-bottom: 10px;
+}
+
+.research-item h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    flex: 1;
+    /* Le titre prend toute la place disponible */
+    line-height: 1.4;
+}
+
+/* Nouveau design du bouton "Voir" */
+.project-btn {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--accent-color);
+    border: 1px solid var(--accent-color);
+    padding: 6px 14px;
+    border-radius: 4px;
+    white-space: nowrap;
+    /* Empêche le bouton de se casser sur deux lignes */
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.project-btn:hover {
+    background-color: var(--accent-color);
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 86, 179, 0.2);
+}
+
+.meta {
+    font-size: 0.9rem;
+    color: #888;
+    margin-top: 0px;
+    margin-bottom: 8px;
+    font-style: italic;
+}
+
+/* --- Footer --- */
+footer {
+    margin-top: 80px;
+    font-size: 0.85rem;
+    color: #aaa;
+    text-align: center;
+    font-family: sans-serif;
+}
+
+.project-header {
+    margin-bottom: 2px;
+}
+
+/* Responsive pour petits écrans */
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+    }
+
+    .project-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .project-btn {
+        align-self: flex-start;
+        /* Le bouton s'aligne à gauche sur mobile */
+    }
+}

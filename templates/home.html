@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% from "_macros.html" import post_card, project_item %}
+
+{% block title %}{{ author.name }}{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">{{ author.role }}</p>
+    <h1>{{ author.name }}</h1>
+    <p class="lede">{{ author.bio }}</p>
+    <p class="hero-links">
+      {% for link in author.links %}<a href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+    </p>
+  </div>
+</section>
+
+{% if config.interests %}
+<section class="band">
+  <div class="wrap">
+    <h2 class="section-title">Research interests</h2>
+    <dl class="interests">
+      {% for item in config.interests %}
+      <div class="interest">
+        <dt>{{ item.name }}</dt>
+        <dd>{{ item.text }}</dd>
+      </div>
+      {% endfor %}
+    </dl>
+  </div>
+</section>
+{% endif %}
+
+{% if featured %}
+<section class="band">
+  <div class="wrap">
+    <h2 class="section-title">Selected work
+      <a class="section-more" href="/projects/">All projects &rarr;</a>
+    </h2>
+    <div class="project-list">
+      {% for project in featured %}{{ project_item(project) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="band">
+  <div class="wrap">
+    <h2 class="section-title">From the blog
+      <a class="section-more" href="/blog/">All posts &rarr;</a>
+    </h2>
+    {% if recent %}
+    <div class="post-list">
+      {% for post in recent %}{{ post_card(post) }}{% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">Nothing published yet.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

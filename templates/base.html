@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="{{ config.lang | default('en') }}" data-theme-default>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ site_title }}{% endblock %}</title>
+<meta name="description" content="{% block description %}{{ config.description }}{% endblock %}">
+<meta name="author" content="{{ author.name }}">
+<meta property="og:title" content="{% block og_title %}{{ site_title }}{% endblock %}">
+<meta property="og:description" content="{% block og_description %}{{ config.description }}{% endblock %}">
+<meta property="og:type" content="website">
+<link rel="alternate" type="application/rss+xml" title="{{ site_title }}" href="/feed.xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<link rel="stylesheet" href="/assets/style.css">
+<link rel="stylesheet" href="/assets/pygments.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>&#9671;</text></svg>">
+{# Applied before first paint so the chosen theme never flashes. #}
+<script>
+(function () {
+  try {
+    var saved = localStorage.getItem("theme");
+    if (saved === "dark" || saved === "light") {
+      document.documentElement.setAttribute("data-theme", saved);
+    }
+  } catch (e) {}
+})();
+</script>
+{% block head %}{% endblock %}
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="bar">
+    <a class="wordmark" href="/">{{ author.name }}</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="/"{% if active == 'home' %} class="current" aria-current="page"{% endif %}>Home</a>
+      <a href="/projects/"{% if active == 'projects' %} class="current" aria-current="page"{% endif %}>Projects</a>
+      <a href="/blog/"{% if active == 'blog' %} class="current" aria-current="page"{% endif %}>Blog</a>
+      <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark theme">
+        <span class="theme-toggle-icon" aria-hidden="true"></span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p>&copy; {{ build_date.year }} {{ author.name }}</p>
+    <p class="footer-links">
+      {% for link in author.links %}<a href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+      <a href="/feed.xml">RSS</a>
+    </p>
+  </div>
+</footer>
+
+<script src="/assets/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

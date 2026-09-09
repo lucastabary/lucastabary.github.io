@@ -1,0 +1,94 @@
+# ---------------------------------------------------------------------------
+# Everything on the home and projects pages comes from this file.
+# Edit the data here, never the HTML — `build.py` renders the templates.
+# ---------------------------------------------------------------------------
+
+title: Lucas Tabary
+url: https://lucastabary.github.io
+description: >-
+  Computer science engineering student at Telecom Nancy, working on machine
+  learning, computational neuroscience and spectral graph theory.
+lang: en
+
+author:
+  name: Lucas Tabary
+  role: Computer Science Engineering Student @ Telecom Nancy
+  # Two or three sentences, shown right under your name on the home page.
+  bio: >-
+    I am an engineering student at Telecom Nancy with a research interest in how
+    learning systems represent structure — in artificial networks, in biological
+    ones, and in the graphs that connect them. I am currently looking for a
+    research internship and, further out, a PhD.
+  email: lucas.tabary01@gmail.com
+  links:
+    - label: Email
+      url: mailto:lucas.tabary01@gmail.com
+    - label: GitHub
+      url: https://github.com/lucastabary
+    - label: LinkedIn
+      url: https://www.linkedin.com/in/lucas-tabary-1a4a22352/
+    # - label: Google Scholar
+    #   url: https://scholar.google.com/citations?user=...
+    # - label: CV
+    #   url: /files/cv.pdf
+
+# Shown as a short list on the home page.
+interests:
+  - name: Machine Learning
+    text: >-
+      Artificial neural networks, supervised and unsupervised learning, and what
+      makes a representation generalise.
+  - name: Computational Neuroscience
+    text: >-
+      Modelling cognitive processes, and the analogies between biological
+      networks and artificial architectures such as RNNs and spiking neural
+      networks.
+  - name: Algebraic Graph Theory
+    text: >-
+      Spectral properties of graphs (Laplacian, adjacency spectrum) and their
+      use in geometric deep learning and graph neural network optimisation.
+
+# Add a project by appending an entry here.
+#   featured: true  -> also shown on the home page
+#   status: a short label rendered as a chip (optional)
+projects:
+  - name: Symbolic music generation with recurrent neural networks
+    context: Personal project
+    year: 2025
+    featured: true
+    text: >-
+      A study of LSTM architectures for MIDI sequence generation, focused on how
+      well the model captures long-range temporal structure in classical music
+      corpora.
+    links:
+      - label: Code
+        url: https://github.com/lucastabary/Project4/
+
+  - name: Near-infrared spectroscopy analysis of plant specimens
+    context: Research initiation project • Telecom Nancy
+    year: 2025
+    featured: true
+    text: >-
+      Latent space exploration of NIRS measurements for the chemical
+      characterisation of plant specimens, using dimensionality reduction
+      (PCA, t-SNE, VAE) ahead of classification.
+    links:
+      - label: Code
+        url: https://github.com/lucastabary/PIDR_RICOCHET
+
+  - name: EarTrainer
+    context: Personal project
+    year: 2024
+    featured: false
+    text: >-
+      A small web tool for practising interval and chord recognition by ear.
+    links:
+      - label: Code
+        url: https://github.com/lucastabary
+
+blog:
+  # Text shown at the top of the blog index.
+  tagline: >-
+    Notes, experiments and half-formed ideas. Notebooks and papers land here as
+    soon as they are worth reading.
+  posts_on_home: 3

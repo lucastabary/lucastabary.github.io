@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import post_card %}
+
+{% block title %}Blog &middot; {{ author.name }}{% endblock %}
+{% block description %}{{ config.blog.tagline | default('Notes and experiments.') }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <h1>Blog</h1>
+    {% if config.blog and config.blog.tagline %}
+    <p class="lede">{{ config.blog.tagline }}</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    {% if posts %}
+    <div class="filters" data-filters>
+      <label class="search">
+        <span class="visually-hidden">Search posts</span>
+        <input type="search" id="post-search" placeholder="Search posts" autocomplete="off" data-search>
+      </label>
+      {% if tags %}
+      <div class="tag-filters" role="group" aria-label="Filter by tag">
+        <button type="button" class="tag-filter is-active" data-tag="">All</button>
+        {% for tag in tags %}
+        <button type="button" class="tag-filter" data-tag="{{ tag | lower }}">{{ tag }}</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="post-list" data-post-list>
+      {% for post in posts %}{{ post_card(post) }}{% endfor %}
+    </div>
+    <p class="empty" data-no-results hidden>No post matches that filter.</p>
+    {% else %}
+    <p class="empty">
+      Nothing here yet. Drop a <code>.ipynb</code>, <code>.md</code>, <code>.html</code> or
+      <code>.pdf</code> file into <code>posts/</code> and it will show up.
+    </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

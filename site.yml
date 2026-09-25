@@ -89,6 +89,9 @@ interests:
 #   blog:            folder in that repo whose posts join this site.
 #                    Remove the key to stop pulling posts from that project.
 #   branch:          only if the posts do not live on the default branch
+#   activity: false  hide the commit heatmap (shown by default when `repo` is set)
+#   image:           preview image when the project page is shared, instead of
+#                    the generated one (a /rooted path or a full URL)
 projects:
   - name: Symbolic music generation with recurrent neural networks
     slug: music-generation-rnn
@@ -138,6 +141,16 @@ blog:
   tagline: >-
     Notes, experiments and half-formed ideas. Notebooks and papers land here as
     soon as they are worth reading.
+
+# Preview images (Open Graph) for the fixed pages. Every page gets a generated
+# 1200x630 PNG; name an image here to use it instead. Put the file in static/
+# (static/images/og-home.png is served at /images/og-home.png) or give a URL.
+# Posts use `image:` in their own metadata, projects `image:` above.
+og_images:
+  # home: /images/og-home.png
+  # blog: /images/og-blog.png
+  # projects: /images/og-projects.png
+  # about: /images/og-about.png
 
 # The home page is an overview: pinned posts, then the latest ones.
 home:

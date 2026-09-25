@@ -43,6 +43,10 @@ A folder with several posts and no `index.*` gets a generated page at its URL
 listing them, in filename order (so `01-intro.md`, `02-method.ipynb` read as a
 series). Its title and summary come from the folder's `meta.yml`.
 
+Every post of a multi-post folder ends with *Previous* / *Next* links and its
+position (`2 / 3`), in reading order: the folder's `index.*` first, then the
+other files by filename.
+
 Since every file is published, anything else goes behind a `_`: `_scratch.md`,
 `_src/` for LaTeX sources or figure scripts.
 
@@ -106,6 +110,7 @@ own `<name>.meta.yml`.
 | `slug` | the URL, if you do not want the one derived from the filename |
 | `draft` | `true` keeps the post out of the build |
 | `featured` | `true` pins the post to the home page |
+| `image` | preview image when the post is shared, instead of the generated one: a file in the post folder, a /rooted path or a URL |
 
 A file or folder whose name starts with `_` or `.` is ignored entirely — handy
 for parking something in `posts/` that is not a post at all.
@@ -192,6 +197,30 @@ All three come from `site.yml`. Do not edit the generated HTML.
   The list is written by hand; what fills in automatically is each project's
   posts, pulled from its repo.
 
+### Project activity
+
+Each project with a `repo` shows its commit activity as a GitHub-style heatmap:
+the past 26 weeks on its card, the whole year with month labels on its page.
+Squares are coloured by quartile of the busy days, so a single large commit day
+does not flatten the rest.
+
+The build reads the commits from the GitHub API (the local clones are shallow)
+and caches their dates in `.cache/activity/` for six hours; `--refresh` fetches
+again, `--offline` uses the cache. In CI the workflow passes `GITHUB_TOKEN` to
+lift the anonymous rate limit. A failed fetch only prints a warning, and the
+project shows no heatmap. `activity: false` on a project hides it.
+
+### Preview images
+
+Every page gets a 1200x630 Open Graph image, drawn at build time with Pillow in
+the site's typefaces (`fonts/`, OFL): kind and project, title, summary, author
+and date. It is written as `og-image.png` next to the page and declared in the
+`og:image` and `twitter:image` tags, so shared links show a large card.
+
+To use your own image instead: `image:` in a post's metadata, `image:` on a
+project, or `og_images:` in `site.yml` for home, blog, projects and about.
+Standalone HTML posts keep their own `<head>` and get no generated image.
+
 ### Page titles
 
 Browser-tab titles say what the page is about, and the author's name only ever
@@ -267,12 +296,15 @@ Until that is done the site keeps serving the old branch contents.
 
 ```
 build.py                    the generator
+activity.py                 commit heatmaps of the project repos (GitHub API)
+og_image.py                 Open Graph preview images (Pillow)
+fonts/                      Inter and Source Serif 4 (OFL), used by og_image.py
 site.yml                    profile, interests, projects and their blog sources
 posts/                      drop posts here
 templates/                  Jinja2 page templates
 assets/                     style.css, app.js (copied to /assets/)
 static/                     optional: files copied to the site root as-is
-.cache/                     shallow clones of the project blogs (git-ignored)
+.cache/                     project blog clones and activity (git-ignored)
 .github/workflows/pages.yml build and deploy
 ```
 

@@ -1,35 +1,68 @@
 {% extends "base.html" %}
 {% from "_macros.html" import post_card, project_item %}
 
-{% block title %}{{ author.name }}{% endblock %}
+{% block title %}{{ (config.pages or {}).home or site_title }}{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <div class="wrap">
-    <p class="eyebrow">{{ author.role }}</p>
-    <h1>{{ author.name }}</h1>
-    <p class="lede">{{ author.bio }}</p>
-    <p class="hero-links">
-      {% for link in author.links %}<a href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
-    </p>
+<section class="intro">
+  <div class="wrap intro-grid">
+    <div>
+      <h1>{{ author.name }}</h1>
+      <p class="lede">{{ author.intro or config.description }}</p>
+      <p class="intro-links">
+        <a class="button" href="/about/">About me</a>
+        <a class="button button-ghost" href="/blog/">Read the blog</a>
+        {% for link in author.links %}<a class="intro-link" href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+      </p>
+    </div>
+    {# A small graph as the only ornament: nods to the spectral graph theory interest. #}
+    <svg class="intro-graph" viewBox="0 0 200 170" aria-hidden="true">
+      <g class="edges">
+        <line x1="30" y1="40" x2="85" y2="25"/><line x1="30" y1="40" x2="60" y2="95"/>
+        <line x1="85" y1="25" x2="60" y2="95"/><line x1="85" y1="25" x2="140" y2="50"/>
+        <line x1="60" y1="95" x2="115" y2="110"/><line x1="140" y1="50" x2="115" y2="110"/>
+        <line x1="140" y1="50" x2="178" y2="92"/><line x1="115" y1="110" x2="178" y2="92"/>
+        <line x1="115" y1="110" x2="95" y2="155"/><line x1="178" y1="92" x2="160" y2="150"/>
+        <line x1="95" y1="155" x2="160" y2="150"/><line x1="60" y1="95" x2="20" y2="130"/>
+      </g>
+      <g class="nodes">
+        <circle cx="30" cy="40" r="5"/><circle cx="85" cy="25" r="6.5"/>
+        <circle cx="60" cy="95" r="7" class="hub"/><circle cx="140" cy="50" r="6"/>
+        <circle cx="115" cy="110" r="8" class="hub"/><circle cx="178" cy="92" r="5"/>
+        <circle cx="95" cy="155" r="4.5"/><circle cx="160" cy="150" r="5.5"/>
+        <circle cx="20" cy="130" r="4"/>
+      </g>
+    </svg>
   </div>
 </section>
 
-{% if config.interests %}
+{% if pinned %}
 <section class="band">
   <div class="wrap">
-    <h2 class="section-title">Research interests</h2>
-    <dl class="interests">
-      {% for item in config.interests %}
-      <div class="interest">
-        <dt>{{ item.name }}</dt>
-        <dd>{{ item.text }}</dd>
-      </div>
-      {% endfor %}
-    </dl>
+    <h2 class="section-title">Featured</h2>
+    <div class="post-list post-list-pinned">
+      {% for post in pinned %}{{ post_card(post) }}{% endfor %}
+    </div>
   </div>
 </section>
 {% endif %}
+
+<section class="band">
+  <div class="wrap">
+    <h2 class="section-title">{{ 'More posts' if pinned else 'Latest posts' }}
+      <a class="section-more" href="/blog/">All posts &rarr;</a>
+    </h2>
+    {% if recent %}
+    <div class="post-list">
+      {% for post in recent %}{{ post_card(post) }}{% endfor %}
+    </div>
+    {% elif pinned %}
+    <p class="empty">That is everything for now.</p>
+    {% else %}
+    <p class="empty">Nothing published yet.</p>
+    {% endif %}
+  </div>
+</section>
 
 {% if featured %}
 <section class="band">
@@ -37,25 +70,10 @@
     <h2 class="section-title">Selected work
       <a class="section-more" href="/projects/">All projects &rarr;</a>
     </h2>
-    <div class="project-list">
+    <div class="project-grid">
       {% for project in featured %}{{ project_item(project) }}{% endfor %}
     </div>
   </div>
 </section>
 {% endif %}
-
-<section class="band">
-  <div class="wrap">
-    <h2 class="section-title">From the blog
-      <a class="section-more" href="/blog/">All posts &rarr;</a>
-    </h2>
-    {% if recent %}
-    <div class="post-list">
-      {% for post in recent %}{{ post_card(post) }}{% endfor %}
-    </div>
-    {% else %}
-    <p class="empty">Nothing published yet.</p>
-    {% endif %}
-  </div>
-</section>
 {% endblock %}

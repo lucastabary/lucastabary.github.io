@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import post_card %}
+
+{# A post folder without index.*: generated so its URL lists the posts it holds. #}
+{% block title %}{{ series.title }}{% endblock %}
+{% block description %}{{ series.summary or series.title }}{% endblock %}
+{% block og_title %}{{ series.title }}{% endblock %}
+{% block og_description %}{{ series.summary or series.title }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <p class="crumb">
+      <a href="/blog/">&larr; Blog</a>
+      {% if series.project %}
+      <span class="crumb-sep">/</span>
+      <a href="{{ series.project.url }}">{{ series.project.name }}</a>
+      {% endif %}
+    </p>
+    <h1>{{ series.title }}</h1>
+    {% if series.date %}
+    <p class="project-meta"><time datetime="{{ series.date.isoformat() }}">{{ series.date.strftime("%d %B %Y").lstrip("0") }}</time></p>
+    {% endif %}
+    {% if series.summary %}<p class="lede">{{ series.summary }}</p>{% endif %}
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <div class="post-list">
+      {% for post in series.posts %}{{ post_card(post, show_project=False) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

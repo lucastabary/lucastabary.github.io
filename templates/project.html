@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_macros.html" import post_card %}
 
-{% block title %}{{ project.name }} &middot; {{ author.name }}{% endblock %}
+{% block title %}{{ project.name }}{% endblock %}
 {% block description %}{{ project.text }}{% endblock %}
 {% block og_title %}{{ project.name }}{% endblock %}
 {% block og_description %}{{ project.text }}{% endblock %}
@@ -10,12 +10,8 @@
 <section class="page-head">
   <div class="wrap">
     <p class="crumb"><a href="/projects/">&larr; Projects</a></p>
+    {% if project.context %}<p class="eyebrow">{{ project.context }}</p>{% endif %}
     <h1>{{ project.name }}</h1>
-    {% if project.context or project.year %}
-    <p class="project-meta">
-      {{ project.context }}{% if project.context and project.year %} &middot; {% endif %}{{ project.year }}
-    </p>
-    {% endif %}
     <p class="lede">{{ project.text }}</p>
     {% if project.links %}
     <p class="hero-links">
@@ -27,7 +23,9 @@
 
 <section class="band">
   <div class="wrap">
-    <h2 class="section-title">Notes from this project</h2>
+    <h2 class="section-title">Notes from this project
+      {% if project.posts %}<a class="section-more" href="/blog/?project={{ project.slug }}">Filter them in the blog &rarr;</a>{% endif %}
+    </h2>
     {% if project.posts %}
     <div class="post-list">
       {% for post in project.posts %}{{ post_card(post, show_project=False) }}{% endfor %}

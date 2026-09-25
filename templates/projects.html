@@ -1,21 +1,22 @@
 {% extends "base.html" %}
 {% from "_macros.html" import project_item %}
 
-{% block title %}Projects &middot; {{ author.name }}{% endblock %}
+{% block title %}{{ (config.pages or {}).projects or 'Projects' }}{% endblock %}
 {% block description %}Research projects and personal work by {{ author.name }}.{% endblock %}
 
 {% block content %}
 <section class="page-head">
   <div class="wrap">
-    <h1>Projects</h1>
-    <p class="lede">Research work, coursework and things built out of curiosity.</p>
+    <p class="eyebrow">Projects &middot; {{ projects | length }}</p>
+    <h1>Research and personal work</h1>
+    <p class="lede">Research work, coursework and things built out of curiosity. Each project page collects the notes published from its repository.</p>
   </div>
 </section>
 
 <section class="band">
   <div class="wrap">
     {% if projects %}
-    <div class="project-list">
+    <div class="project-grid">
       {% for project in projects %}{{ project_item(project) }}{% endfor %}
     </div>
     {% else %}

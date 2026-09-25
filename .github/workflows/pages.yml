@@ -39,8 +39,10 @@ jobs:
       - name: Install build dependencies
         run: pip install -r requirements.txt
 
+      # --strict fails on unexecuted or failing notebooks and scratch files in posts/;
+      # problems in project repos only warn, so they never block the daily rebuild.
       - name: Build the site
-        run: python build.py
+        run: python build.py --strict
 
       - uses: actions/upload-pages-artifact@v3
         with:

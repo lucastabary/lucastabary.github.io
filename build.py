@@ -8,6 +8,7 @@ Drop a file in ``posts/`` and it becomes a page. Nothing else to edit:
     posts/2026-05-01-preprint.pdf       ->  /blog/preprint/
     posts/interactive-demo.html         ->  /blog/interactive-demo/
     posts/my-post/index.ipynb + images  ->  /blog/my-post/   (folder copied as-is)
+    posts/my-post/appendix.md           ->  /blog/my-post/appendix/   (every file is a post)
 
 Title, date, summary and tags are inferred from the file, and can be overridden
 with front matter or a ``<name>.meta.yml`` sidecar. See README.md.
@@ -46,7 +47,9 @@ POST_EXTS = {".ipynb", ".md", ".markdown", ".html", ".htm", ".pdf"}
 IGNORED_NAMES = {"readme.md", "readme", "meta.yml", "meta.yaml", ".gitkeep"}
 IGNORED_DIRS = {".ipynb_checkpoints", "__pycache__", ".git"}
 
-DATE_PREFIX_RE = re.compile(r"^(\d{4})-(\d{2})-(\d{2})[-_](.+)$")
+DRAFT_NAME_RE = re.compile(
+    r"(^|[-_. ])(draft|wip|todo|scratch|tmp|temp|brouillon|old|backup|copy)([-_. ]|\d|$)", re.I)
+DATE_PREFIX_RE =re.compile(r"^(\d{4})-(\d{2})-(\d{2})[-_](.+)$")
 FRONT_MATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n?", re.DOTALL)
 TAG_RE = re.compile(r"<[^>]+>")
 
@@ -189,6 +192,7 @@ class Post:
     tags: list[str] = field(default_factory=list)
     body: str = ""                 # rendered HTML (empty for pdf / standalone html)
     draft: bool = False
+    featured: bool = False         # pinned to the home page from its own metadata
     words: int = 0
     bundle: Path | None = None
     raw_name: str | None = None    # downloadable source, inside the post folder
@@ -196,6 +200,9 @@ class Post:
     pdf_name: str | None = None
     pdf_pages: int | None = None
     project: dict | None = None    # set when the post came from a project repo
+    issues: list[str] = field(default_factory=list)  # publishing problems, see --strict
+    parent: dict | None = None     # {url, title} of the folder page a nested post belongs to
+    folder: dict | None = None     # {url, title} of its multi-post folder, for the blog filter
 
     KIND_LABELS = {
         "notebook": "Notebook",
@@ -210,6 +217,11 @@ class Post:
         if self.project:
             return f"/blog/{self.project['slug']}/{self.slug}/"
         return f"/blog/{self.slug}/"
+
+    @property
+    def ref(self) -> str:
+        """How site.yml names this post: its URL without /blog/, e.g. 'nirs-spectroscopy/vae'."""
+        return self.url.removeprefix("/blog/").strip("/")
 
     @property
     def source_url(self) -> str | None:
@@ -245,21 +257,20 @@ class Post:
 # discovery
 # ---------------------------------------------------------------------------
 
-def find_main_file(folder: Path) -> Path | None:
-    """The post file inside a bundle folder: index.* wins, else the only one."""
-    candidates = [
+def bundle_post_files(folder: Path) -> list[Path]:
+    """Every post file at the top level of a bundle folder; each one is a post."""
+    return [
         p for p in sorted(folder.iterdir())
-        if p.is_file() and p.suffix.lower() in POST_EXTS and not p.name.startswith((".", "_"))
+        if p.is_file() and p.suffix.lower() in POST_EXTS
+        and not p.name.startswith((".", "_")) and p.name.lower() not in IGNORED_NAMES
     ]
-    if not candidates:
-        return None
-    for candidate in candidates:
-        if candidate.stem.lower() == "index":
-            return candidate
-    if len(candidates) > 1:
-        log(f"! {folder.name}/ holds several post files; using {candidates[0].name} "
-            f"(rename one to index{candidates[0].suffix} to be explicit)")
-    return candidates[0]
+
+
+def is_primary(source: Path, bundle: Path | None) -> bool:
+    """The post that owns the folder URL: index.*, or the folder's only post file."""
+    if bundle is None:
+        return True
+    return source.stem.lower() == "index" or len(bundle_post_files(bundle)) == 1
 
 
 def discover(directory: Path) -> list[tuple[Path, Path | None]]:
@@ -274,9 +285,9 @@ def discover(directory: Path) -> list[tuple[Path, Path | None]]:
         if entry.is_dir():
             if entry.name in IGNORED_DIRS:
                 continue
-            main = find_main_file(entry)
-            if main:
-                found.append((main, entry))
+            files = bundle_post_files(entry)
+            if files:
+                found += [(source, entry) for source in files]
             else:
                 log(f"! {entry.name}/ has no .ipynb/.md/.html/.pdf inside — skipped")
         elif entry.suffix.lower() in POST_EXTS:
@@ -368,18 +379,26 @@ def fetch_project_blog(project: dict, refresh: bool, offline: bool) -> Path | No
 
 def read_sidecar(source: Path, bundle: Path | None) -> dict:
     candidates = [source.with_suffix(".meta.yml"), source.with_suffix(".meta.yaml")]
-    if bundle:
+    # A folder's meta.yml describes its primary post, not every file beside it.
+    if bundle and is_primary(source, bundle):
         candidates += [bundle / "meta.yml", bundle / "meta.yaml"]
     for candidate in candidates:
-        if candidate.is_file():
-            try:
-                data = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
-            except yaml.YAMLError as exc:
-                log(f"! {candidate.name} is not valid YAML ({exc.__class__.__name__}) — ignored")
-                continue
-            if isinstance(data, dict):
-                return data
+        data = read_yaml(candidate)
+        if data is not None:
+            return data
     return {}
+
+
+def read_yaml(path: Path) -> dict | None:
+    """A YAML mapping from disk, or None if the file is missing or not a mapping."""
+    if not path.is_file():
+        return None
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except yaml.YAMLError as exc:
+        log(f"! {path.name} is not valid YAML ({exc.__class__.__name__}) — ignored")
+        return None
+    return data if isinstance(data, dict) else None
 
 
 # ---------------------------------------------------------------------------
@@ -427,6 +446,21 @@ def render_notebook_post(source: Path) -> dict:
     meta = dict(notebook.metadata.get("blog") or {})
     title = meta.get("title")
 
+    # The build never executes notebooks, so what was committed is what readers see.
+    issues: list[str] = []
+    unexecuted = 0
+    for number, cell in enumerate(notebook.cells, start=1):
+        if cell.get("cell_type") != "code" or not str(cell.get("source", "")).strip():
+            continue
+        errors = [o for o in cell.get("outputs", []) if o.get("output_type") == "error"]
+        if errors:
+            issues.append(f"cell {number} raised {errors[0].get('ename', 'an error')}")
+        elif cell.get("execution_count") is None:
+            unexecuted += 1
+    if unexecuted:
+        issues.append(f"{unexecuted} code cell(s) never executed — run the notebook "
+                      "and commit it with its outputs")
+
     # A leading "# Title" cell becomes the page title instead of being repeated.
     for cell in notebook.cells:
         if cell.get("cell_type") != "markdown" or not str(cell.get("source", "")).strip():
@@ -447,7 +481,7 @@ def render_notebook_post(source: Path) -> dict:
     )
     exporter.register_preprocessor(remover, enabled=True)
     body, _ = exporter.from_notebook_node(notebook)
-    return {"kind": "notebook", "meta": meta, "body": body, "title": title}
+    return {"kind": "notebook", "meta": meta, "body": body, "title": title, "issues": issues}
 
 
 def render_html_post(source: Path) -> dict:
@@ -521,9 +555,21 @@ def build_post(source: Path, bundle: Path | None,
     rendered = RENDERERS[source.suffix.lower()](source)
     meta = {**rendered.get("meta", {}), **read_sidecar(source, bundle)}
 
-    stem = bundle.name if bundle else source.stem
+    # The primary post of a folder takes the folder URL; its siblings nest under it:
+    # posts/2026-09-09-study/index.ipynb -> /blog/study/, notes.md -> /blog/study/notes/.
+    primary = is_primary(source, bundle)
+    stem = bundle.name if bundle and primary else source.stem
     file_date, name_rest = split_date_prefix(stem)
     slug = slugify(meta.get("slug") or name_rest)
+    issues = list(rendered.get("issues", []))
+    if bundle and not primary:
+        folder_date, folder_rest = split_date_prefix(bundle.name)
+        file_date = file_date or folder_date
+        slug = f"{slugify(folder_rest)}/{slug}"
+        # Every file in a folder is published, so a forgotten scratch file goes live.
+        if DRAFT_NAME_RE.search(source.stem):
+            issues.append(f"looks like a scratch file but would be published as "
+                          f"{slug}; prefix it with _ to keep it out")
 
     title = str(meta.get("title") or rendered.get("title") or titleize(name_rest)).strip()
     date = coerce_date(meta.get("date")) or file_date
@@ -552,11 +598,13 @@ def build_post(source: Path, bundle: Path | None,
         tags=coerce_tags(meta.get("tags")),
         body=body,
         draft=bool(meta.get("draft", False)),
+        featured=bool(meta.get("featured", False)),
         words=len(plain.split()),
         bundle=bundle,
         standalone_html=rendered.get("standalone"),
         pdf_pages=rendered.get("pages"),
         project=project,
+        issues=issues,
     )
 
 
@@ -752,12 +800,99 @@ def collect_posts(config: dict, include_drafts: bool,
     return posts
 
 
-def build(out_dir: Path, include_drafts: bool = False,
-          refresh: bool = False, offline: bool = False) -> list[Post]:
+def featured_posts(posts: list[Post], refs: list | None) -> list[Post]:
+    """Posts pinned to the home page: site.yml order first, then `featured: true` by date."""
+    by_ref = {p.ref: p for p in posts}
+    pinned: list[Post] = []
+    for ref in refs or []:
+        post = by_ref.get(str(ref).removeprefix("/blog/").strip("/"))
+        if post is None:
+            log(f"! home.featured_posts: no post at /blog/{ref}/ (draft, renamed or not pulled?)")
+        elif post not in pinned:
+            pinned.append(post)
+    pinned += [p for p in posts if p.featured and p not in pinned]
+    return pinned
+
+
+def report_issues(posts: list[Post], strict: bool) -> None:
+    """Log publishing problems; with --strict, fail on those in posts/.
+
+    Project posts only warn: a broken notebook in a project repo must not block
+    the daily rebuild of the whole site.
+    """
+    blocking = 0
+    for post in posts:
+        where = f"{post.project['repo']}:" if post.project else "posts/"
+        name = f"{post.bundle.name}/{post.source.name}" if post.bundle else post.source.name
+        for issue in post.issues:
+            log(f"! {where}{name}: {issue}")
+            blocking += post.project is None
+    if strict and blocking:
+        raise SystemExit(f"{blocking} problem(s) in posts/ (see above); fix them or mark "
+                         "the post draft: true")
+
+
+def link_folder_pages(posts: list[Post]) -> tuple[list[dict], list[dict]]:
+    """Attach nested posts to their folder page, creating one when the folder has no index.
+
+    A folder with several post files and no index.* would leave its own URL empty,
+    so it gets a generated page listing its posts instead.
+
+    Returns the generated folder pages, and every multi-post folder (with or
+    without an index) as a filter entry for the blog index.
+    """
+    by_url = {p.url: p for p in posts}
+    groups: dict[str, list[Post]] = {}
+    for post in posts:
+        if post.bundle and not is_primary(post.source, post.bundle):
+            groups.setdefault(post.url.rstrip("/").rsplit("/", 1)[0] + "/", []).append(post)
+
+    series: list[dict] = []
+    folders: list[dict] = []
+    for url, members in groups.items():
+        members.sort(key=lambda p: p.source.name)
+        owner = by_url.get(url)
+        if owner:
+            parent = {"url": url, "title": owner.title}
+        else:
+            bundle = members[0].bundle
+            meta = read_yaml(bundle / "meta.yml") or read_yaml(bundle / "meta.yaml") or {}
+            date, rest = split_date_prefix(bundle.name)
+            page = {
+                "url": url,
+                "title": str(meta.get("title") or titleize(rest)),
+                "summary": str(meta.get("summary") or "").strip(),
+                "date": coerce_date(meta.get("date")) or date,
+                "project": members[0].project,
+                "posts": members,
+            }
+            series.append(page)
+            parent = {"url": url, "title": page["title"]}
+        for post in members:
+            post.parent = parent
+        # The folder's own post belongs to it too, so filtering shows the whole folder.
+        everyone = members + ([owner] if owner else [])
+        folder = {**parent, "key": url.removeprefix("/blog/").strip("/")}
+        for post in everyone:
+            post.folder = folder
+        folders.append({
+            **folder,
+            "project": members[0].project["slug"] if members[0].project else "",
+            "count": len(everyone),
+            "latest": max((p.date for p in everyone if p.date), default=None),
+        })
+    folders.sort(key=lambda f: (f["latest"] or dt.date.min, f["title"]), reverse=True)
+    return series, folders
+
+
+def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
+          offline: bool = False, strict: bool = False) -> list[Post]:
     config = yaml.safe_load((ROOT / "site.yml").read_text(encoding="utf-8")) or {}
 
     print("Building site")
     posts = collect_posts(config, include_drafts, refresh, offline)
+    report_issues(posts, strict)
+    series, folders = link_folder_pages(posts)
 
     clean_output(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -768,6 +903,7 @@ def build(out_dir: Path, include_drafts: bool = False,
         trim_blocks=True,
         lstrip_blocks=True,
     )
+    env.filters["markdown"] = render_markdown_text
 
     # Each project carries its own identity and the posts pulled from its repo.
     projects = []
@@ -786,6 +922,8 @@ def build(out_dir: Path, include_drafts: bool = False,
         "posts": posts,
         "projects": projects,
         "projects_with_posts": [p for p in projects if p["posts"]],
+        "has_standalone_posts": any(p.project is None for p in posts),
+        "folders": folders,
         "tags": tags,
         "build_date": dt.date.today(),
     }
@@ -794,11 +932,21 @@ def build(out_dir: Path, include_drafts: bool = False,
         write_post(post, out_dir, env, ctx)
         log(f"+ {post.url}  ({post.kind}) {post.title}")
 
-    home_count = int((config.get("blog") or {}).get("posts_on_home", 3))
+    series_template = env.get_template("series.html")
+    for page in series:
+        write(out_dir / page["url"].strip("/") / "index.html",
+              series_template.render(**ctx, active="blog", series=page))
+        log(f"+ {page['url']}  (folder, {len(page['posts'])} post(s)) {page['title']}")
+
+    home = config.get("home") or {}
+    pinned = featured_posts(posts, home.get("featured_posts"))
+    recent_count = int(home.get("recent_posts", 4))
+    recent = [p for p in posts if p not in pinned][:recent_count]
     pages = [
         ("home.html", "index.html",
-         {"active": "home", "recent": posts[:home_count],
+         {"active": "home", "pinned": pinned, "recent": recent,
           "featured": [p for p in projects if p.get("featured")]}),
+        ("about.html", "about/index.html", {"active": "about"}),
         ("projects.html", "projects/index.html", {"active": "projects"}),
         ("blog.html", "blog/index.html", {"active": "blog"}),
         ("404.html", "404.html", {"active": ""}),
@@ -848,14 +996,17 @@ def main(argv: list[str] | None = None) -> int:
                         help="re-clone project blogs instead of reusing the cache")
     parser.add_argument("--offline", action="store_true",
                         help="never reach the network; use whatever is already cached")
+    parser.add_argument("--strict", action="store_true",
+                        help="fail on publishing problems in posts/ (unexecuted or "
+                             "failing notebooks, scratch files); used by CI")
     args = parser.parse_args(argv)
 
     out_dir = Path(args.out)
     if not out_dir.is_absolute():
         out_dir = ROOT / out_dir
 
-    build(out_dir, include_drafts=args.drafts,
-          refresh=args.refresh, offline=args.offline)
+    build(out_dir, include_drafts=args.drafts, refresh=args.refresh,
+          offline=args.offline, strict=args.strict)
     if args.serve:
         serve(out_dir, args.serve)
     return 0

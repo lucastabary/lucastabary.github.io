@@ -1,44 +1,54 @@
 {% macro post_card(post, show_project=True) %}
 <article class="post-card"
          data-tags="{{ post.tags | join('|') | lower }}"
-         data-project="{{ post.project.slug if post.project else '' }}"
+         data-project="{{ post.project.slug if post.project else '_none' }}"
+         data-folder="{{ post.folder.key if post.folder else '' }}"
          data-text="{{ post.search_text }}">
-  <div class="post-card-meta">
-    <time datetime="{{ post.date_iso }}">{{ post.date_label }}</time>
-    <span class="kind kind-{{ post.kind }}">{{ post.kind_label }}</span>
-    {% if post.reading_time %}<span class="dim">{{ post.reading_time }} min read</span>{% endif %}
-    {% if post.project and show_project %}
-    <a class="project-chip" href="{{ post.project.url }}">{{ post.project.short }}</a>
-    {% endif %}
+  <time class="post-card-date" datetime="{{ post.date_iso }}">{{ post.date_label }}</time>
+  <div class="post-card-main">
+    <h3 class="post-card-title"><a href="{{ post.url }}">{{ post.title }}</a></h3>
+    {% if post.summary %}<p class="post-card-summary">{{ post.summary }}</p>{% endif %}
+    <div class="post-card-meta">
+      <span class="kind kind-{{ post.kind }}">{{ post.kind_label }}</span>
+      {% if post.reading_time %}<span class="dim">{{ post.reading_time }} min read</span>{% endif %}
+      {% if post.project and show_project %}
+      <a class="project-chip" href="{{ post.project.url }}">{{ post.project.short }}</a>
+      {% endif %}
+      {% if post.folder and post.folder.url != post.url %}
+      <a class="folder-chip" href="{{ post.folder.url }}">{{ post.folder.title }}</a>
+      {% endif %}
+      {% for tag in post.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </div>
   </div>
-  <h3 class="post-card-title"><a href="{{ post.url }}">{{ post.title }}</a></h3>
-  {% if post.summary %}<p class="post-card-summary">{{ post.summary }}</p>{% endif %}
-  {% if post.tags %}
-  <p class="tag-row">
-    {% for tag in post.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
-  </p>
-  {% endif %}
 </article>
+{% endmacro %}
+
+{% macro post_crumb(post) %}
+<p class="crumb">
+  <a href="/blog/">&larr; Blog</a>
+  {% if post.project %}
+  <span class="crumb-sep">/</span>
+  <a href="{{ post.project.url }}">{{ post.project.name }}</a>
+  {% endif %}
+  {% if post.parent %}
+  <span class="crumb-sep">/</span>
+  <a href="{{ post.parent.url }}">{{ post.parent.title }}</a>
+  {% endif %}
+</p>
 {% endmacro %}
 
 {% macro project_item(project) %}
 <article class="project">
-  <div class="project-head">
-    <h3><a href="{{ project.url }}">{{ project.name }}</a></h3>
-    {% if project.links %}
-    <p class="project-links">
-      {% for link in project.links %}<a href="{{ link.url }}">{{ link.label }} &rarr;</a>{% endfor %}
-    </p>
-    {% endif %}
-  </div>
-  {% if project.context or project.year %}
-  <p class="project-meta">
-    {{ project.context }}{% if project.context and project.year %} &middot; {% endif %}{{ project.year }}
+  {% if project.context %}<p class="project-meta">{{ project.context }}</p>{% endif %}
+  <h3><a href="{{ project.url }}">{{ project.name }}</a></h3>
+  <p class="project-text">{{ project.text }}</p>
+  <p class="project-foot">
     {% if project.posts %}
-    &middot; <a href="{{ project.url }}">{{ project.posts | length }} post{{ '' if project.posts | length == 1 else 's' }}</a>
+    <a href="{{ project.url }}">{{ project.posts | length }} post{{ '' if project.posts | length == 1 else 's' }} &rarr;</a>
+    {% else %}
+    <a href="{{ project.url }}">Project page &rarr;</a>
     {% endif %}
+    {% for link in project.links %}<a class="dim-link" href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
   </p>
-  {% endif %}
-  <p>{{ project.text }}</p>
 </article>
 {% endmacro %}

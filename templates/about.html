@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ (config.pages or {}).about or 'About' }}{% endblock %}
+{% block description %}{{ author.bio | default(config.description) | striptags | truncate(200) }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    {% if author.role %}<p class="eyebrow">{{ author.role }}</p>{% endif %}
+    <h1>About me</h1>
+    {% if author.bio %}<p class="lede">{{ author.bio }}</p>{% endif %}
+  </div>
+</section>
+
+{% if config.about %}
+<section class="band band-tight">
+  <div class="wrap post-body about-prose">
+    {{ config.about | markdown | safe }}
+  </div>
+</section>
+{% endif %}
+
+{% if config.interests %}
+<section class="band">
+  <div class="wrap">
+    <h2 class="section-title">Research interests</h2>
+    <div class="interest-grid">
+      {% for item in config.interests %}
+      <article class="interest">
+        <span class="interest-index" aria-hidden="true">{{ '%02d' % loop.index }}</span>
+        <h3>{{ item.name }}</h3>
+        <p>{{ item.text }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,24 +1,35 @@
 # ---------------------------------------------------------------------------
-# Everything on the home and projects pages comes from this file.
+# Everything on the home, about and projects pages comes from this file.
 # Edit the data here, never the HTML — `build.py` renders the templates.
 # ---------------------------------------------------------------------------
 
 title: Lucas Tabary
 url: https://lucastabary.github.io
 description: >-
-  Computer science engineering student at Telecom Nancy, working on machine
-  learning, computational neuroscience and spectral graph theory.
+  Research notes on machine learning, computational neuroscience and spectral
+  graph theory, by an engineering student in AI and statistics.
 lang: en
+
+# Browser-tab titles. Each should say what the page is about; the author's name
+# is appended after it (" · Lucas Tabary"), never put first.
+pages:
+  home: Research notes on machine learning, neuroscience and graphs
+  blog: "Blog: notes, notebooks and experiments"
+  projects: "Projects: research and personal work"
+  about: "About: background and research interests"
 
 author:
   name: Lucas Tabary
-  role: Computer Science Engineering Student @ Telecom Nancy
-  # Two or three sentences, shown right under your name on the home page.
+  # Small line above the name on the About page.
+  role: Telecom Nancy (IAMD) · Master ISMD, Université de Lorraine
+  # One line under your name on the home page.
+  intro: >-
+    Engineering student working on machine learning, computational
+    neuroscience and spectral graph theory.
+  # One or two sentences: the About page lede and its meta description.
   bio: >-
-    I am an engineering student at Telecom Nancy with a research interest in how
-    learning systems represent structure — in artificial networks, in biological
-    ones, and in the graphs that connect them. I am currently looking for a
-    research internship and, further out, a PhD.
+    I study how learning systems represent structure — in artificial networks,
+    in biological ones, and in the graphs that connect them.
   email: lucas.tabary01@gmail.com
   links:
     - label: Email
@@ -32,21 +43,42 @@ author:
     # - label: CV
     #   url: /files/cv.pdf
 
-# Shown as a short list on the home page.
+# The About page narrative, in Markdown, first person. Shown under the bio.
+about: |
+  I am an engineering student at Telecom Nancy, in the IAMD track (artificial
+  intelligence and big data), and I am following the ISMD Master's in
+  statistics and machine learning at Université de Lorraine in parallel. The
+  combination is deliberate: engineering taught me to build models, statistics
+  taught me to distrust them until the evidence is in.
+
+  What draws me to research is a question that keeps coming back in different
+  forms: *what does a network actually learn about the structure of its data?*
+  I approach it from three sides: the representations of deep networks, the
+  dynamics of biological circuits, and the spectral geometry of graphs, which
+  offers a common language for both.
+
+  This site is where I think out loud. Most posts are notebooks written next to
+  the code they describe, published as soon as they are worth reading rather
+  than when they are finished.
+
+# Shown on the About page.
 interests:
-  - name: Machine Learning
+  - name: Representation learning
     text: >-
-      Artificial neural networks, supervised and unsupervised learning, and what
-      makes a representation generalise.
-  - name: Computational Neuroscience
+      What a trained network encodes, and why some representations transfer
+      while others only fit. I work with latent-variable models (VAEs,
+      dimensionality reduction) and look for structure a model found without
+      being told to.
+  - name: Computational neuroscience
     text: >-
-      Modelling cognitive processes, and the analogies between biological
-      networks and artificial architectures such as RNNs and spiking neural
-      networks.
-  - name: Algebraic Graph Theory
+      Recurrent and spiking networks as models of cognitive processes, and the
+      reverse question: which ideas from biological circuits make artificial
+      architectures learn better.
+  - name: Spectral graph theory
     text: >-
-      Spectral properties of graphs (Laplacian, adjacency spectrum) and their
-      use in geometric deep learning and graph neural network optimisation.
+      The Laplacian and adjacency spectra as a lens on graph structure, and
+      their use in geometric deep learning: spectral convolutions, positional
+      encodings and the optimisation of graph neural networks.
 
 # Add a project by appending an entry here. Each one gets its own page at
 # /projects/<slug>/.
@@ -62,7 +94,6 @@ projects:
     slug: music-generation-rnn
     short: Music generation
     context: Personal project
-    year: 2025
     featured: true
     repo: lucastabary/Project4
     blog: blog
@@ -78,7 +109,6 @@ projects:
     slug: nirs-spectroscopy
     short: NIRS spectroscopy
     context: Research initiation project • Telecom Nancy
-    year: 2025
     featured: true
     repo: lucastabary/PIDR_RICOCHET
     blog: blog
@@ -94,7 +124,6 @@ projects:
     slug: eartrainer
     short: EarTrainer
     context: Personal project
-    year: 2024
     featured: false
     repo: lucastabary/EarTrainer
     blog: blog
@@ -109,4 +138,13 @@ blog:
   tagline: >-
     Notes, experiments and half-formed ideas. Notebooks and papers land here as
     soon as they are worth reading.
-  posts_on_home: 3
+
+# The home page is an overview: pinned posts, then the latest ones.
+home:
+  # Posts to pin at the top, in this order. Name a post by its URL without
+  # /blog/: `how-this-blog-works`, or `nirs-spectroscopy/vae` for a project
+  # post. `featured: true` in a post's own metadata pins it too.
+  featured_posts:
+    - how-this-blog-works
+  # How many of the latest posts to list under the pinned ones.
+  recent_posts: 4

@@ -3,10 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}{{ site_title }}{% endblock %}</title>
+{# Pages set a descriptive title; the author's name only ever comes after it. #}
+{% set page_title %}{% block title %}{{ site_title }}{% endblock %}{% endset %}
+<title>{{ page_title | trim }}{% if author.name and author.name not in page_title %} &middot; {{ author.name }}{% endif %}</title>
 <meta name="description" content="{% block description %}{{ config.description }}{% endblock %}">
 <meta name="author" content="{{ author.name }}">
-<meta property="og:title" content="{% block og_title %}{{ site_title }}{% endblock %}">
+<meta property="og:title" content="{% block og_title %}{{ page_title | trim }}{% endblock %}">
 <meta property="og:description" content="{% block og_description %}{{ config.description }}{% endblock %}">
 <meta property="og:type" content="website">
 <link rel="alternate" type="application/rss+xml" title="{{ site_title }}" href="/feed.xml">
@@ -15,7 +17,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
 <link rel="stylesheet" href="/assets/style.css">
 <link rel="stylesheet" href="/assets/pygments.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>&#9671;</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2327489c' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 10.5 12 3l9 7.5'/><path d='M5.5 8.8V20a1 1 0 0 0 1 1H10v-6h4v6h3.5a1 1 0 0 0 1-1V8.8'/></svg>">
 {# Applied before first paint so the chosen theme never flashes. #}
 <script>
 (function () {
@@ -35,11 +37,15 @@
 
 <header class="site-header">
   <div class="bar">
-    <a class="wordmark" href="/">{{ author.name }}</a>
+    <a class="home-link" href="/" aria-label="Home" title="Home"{% if active == 'home' %} aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 8.8V20a1 1 0 0 0 1 1H10v-6h4v6h3.5a1 1 0 0 0 1-1V8.8"/>
+      </svg>
+    </a>
     <nav class="site-nav" aria-label="Main">
-      <a href="/"{% if active == 'home' %} class="current" aria-current="page"{% endif %}>Home</a>
-      <a href="/projects/"{% if active == 'projects' %} class="current" aria-current="page"{% endif %}>Projects</a>
       <a href="/blog/"{% if active == 'blog' %} class="current" aria-current="page"{% endif %}>Blog</a>
+      <a href="/projects/"{% if active == 'projects' %} class="current" aria-current="page"{% endif %}>Projects</a>
+      <a href="/about/"{% if active == 'about' %} class="current" aria-current="page"{% endif %}>About</a>
       <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark theme">
         <span class="theme-toggle-icon" aria-hidden="true"></span>
       </button>

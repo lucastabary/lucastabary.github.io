@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% from "_macros.html" import post_crumb %}
 
-{% block title %}{{ post.title }} &middot; {{ author.name }}{% endblock %}
+{% block title %}{{ post.title }}{% endblock %}
 {% block description %}{{ post.summary }}{% endblock %}
 {% block og_title %}{{ post.title }}{% endblock %}
 {% block og_description %}{{ post.summary }}{% endblock %}
@@ -9,13 +10,7 @@
 <article class="post post-{{ post.kind }}">
   <header class="post-head">
     <div class="wrap">
-      <p class="crumb">
-        <a href="/blog/">&larr; Blog</a>
-        {% if post.project %}
-        <span class="crumb-sep">/</span>
-        <a href="{{ post.project.url }}">{{ post.project.name }}</a>
-        {% endif %}
-      </p>
+      {{ post_crumb(post) }}
       <h1>{{ post.title }}</h1>
       <div class="post-meta">
         <time datetime="{{ post.date_iso }}">{{ post.date_label }}</time>

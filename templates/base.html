@@ -10,7 +10,19 @@
 <meta name="author" content="{{ author.name }}">
 <meta property="og:title" content="{% block og_title %}{{ page_title | trim }}{% endblock %}">
 <meta property="og:description" content="{% block og_description %}{{ config.description }}{% endblock %}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="{{ 'article' if post is defined else 'website' }}">
+<meta property="og:site_name" content="{{ site_title }}">
+{% if og_image %}
+{# Previews need an absolute URL; generated images are 1200x630 PNGs next to the page. #}
+{% set og_url = og_image if og_image.startswith('http') else (config.url | default('')).rstrip('/') ~ og_image %}
+<meta property="og:image" content="{{ og_url }}">
+{% if og_image.endswith('/og-image.png') %}
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+{% endif %}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{{ og_url }}">
+{% endif %}
 <link rel="alternate" type="application/rss+xml" title="{{ site_title }}" href="/feed.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

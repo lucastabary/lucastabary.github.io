@@ -37,6 +37,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 import activity
+import og_image
 
 ROOT = Path(__file__).resolve().parent
 POSTS_DIR = ROOT / "posts"
@@ -45,6 +46,7 @@ ASSETS_DIR = ROOT / "assets"
 STATIC_DIR = ROOT / "static"
 CACHE_DIR = ROOT / ".cache" / "sources"
 ACTIVITY_CACHE_DIR = ROOT / ".cache" / "activity"
+OG_NAME = "og-image.png"           # generated preview image, next to each page
 
 POST_EXTS = {".ipynb", ".md", ".markdown", ".html", ".htm", ".pdf"}
 IGNORED_NAMES = {"readme.md", "readme", "meta.yml", "meta.yaml", ".gitkeep"}
@@ -206,6 +208,8 @@ class Post:
     issues: list[str] = field(default_factory=list)  # publishing problems, see --strict
     parent: dict | None = None     # {url, title} of the folder page a nested post belongs to
     folder: dict | None = None     # {url, title} of its multi-post folder, for the blog filter
+    image: str | None = None       # `image:` from the metadata: overrides the generated preview
+    og_image: str | None = None    # URL of the preview image finally used
 
     KIND_LABELS = {
         "notebook": "Notebook",
@@ -602,6 +606,7 @@ def build_post(source: Path, bundle: Path | None,
         body=body,
         draft=bool(meta.get("draft", False)),
         featured=bool(meta.get("featured", False)),
+        image=str(meta["image"]).strip() if meta.get("image") else None,
         words=len(plain.split()),
         bundle=bundle,
         standalone_html=rendered.get("standalone"),
@@ -689,14 +694,14 @@ def write_post(post: Post, out_dir: Path, env: Environment, ctx: dict) -> None:
     if post.kind == "pdf":
         post.pdf_name = post.source.name
         post.raw_name = None
-        page = env.get_template("pdf.html").render(post=post, **ctx)
+        page = env.get_template("pdf.html").render(post=post, og_image=post.og_image, **ctx)
     elif post.standalone_html is not None:
         page = re.sub(r"(<body[^>]*>)", lambda m: m.group(1) + BACK_BAR,
                       post.standalone_html, count=1, flags=re.I)
         if page == post.standalone_html:      # no <body> tag to hook onto
             page = BACK_BAR + page
     else:
-        page = env.get_template("post.html").render(post=post, **ctx)
+        page = env.get_template("post.html").render(post=post, og_image=post.og_image, **ctx)
 
     write(post_dir / "index.html", page)
 
@@ -888,6 +893,23 @@ def link_folder_pages(posts: list[Post]) -> tuple[list[dict], list[dict]]:
     return series, folders
 
 
+def resolve_image(image: str, page_url: str) -> str:
+    """A site-relative URL for an `image:` override: absolute, /rooted, or relative to the page."""
+    if image.startswith(("http://", "https://", "/")):
+        return image
+    return page_url + image
+
+
+def make_og_image(out_dir: Path, page_url: str, override: str | None, config: dict,
+                  **content: str) -> str:
+    """The preview image of a page: the override if given, else a generated PNG."""
+    if override:
+        return resolve_image(override, page_url)
+    host = str(config.get("url", "")).split("://")[-1].rstrip("/")
+    og_image.render(out_dir / page_url.strip("/") / OG_NAME, site=host, **content)
+    return page_url + OG_NAME
+
+
 def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
           offline: bool = False, strict: bool = False) -> list[Post]:
     config = yaml.safe_load((ROOT / "site.yml").read_text(encoding="utf-8")) or {}
@@ -938,14 +960,26 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
         "build_date": dt.date.today(),
     }
 
+    author_name = (config.get("author") or {}).get("name", "")
+    footer = lambda *parts: " · ".join(x for x in (author_name, *parts) if x)
+
     for post in posts:
+        if post.standalone_html is None:       # a standalone page keeps its own <head>
+            eyebrow = " · ".join(x for x in (
+                post.kind_label, post.project["short"] if post.project else "") if x)
+            post.og_image = make_og_image(
+                out_dir, post.url, post.image, config, title=post.title, eyebrow=eyebrow,
+                summary=post.summary, footer=footer(post.date_label if post.date else ""))
         write_post(post, out_dir, env, ctx)
         log(f"+ {post.url}  ({post.kind}) {post.title}")
 
     series_template = env.get_template("series.html")
     for page in series:
+        image = make_og_image(out_dir, page["url"], None, config, title=page["title"],
+                              eyebrow=f"Series · {len(page['posts'])} posts",
+                              summary=page["summary"], footer=footer())
         write(out_dir / page["url"].strip("/") / "index.html",
-              series_template.render(**ctx, active="blog", series=page))
+              series_template.render(**ctx, active="blog", series=page, og_image=image))
         log(f"+ {page['url']}  (folder, {len(page['posts'])} post(s)) {page['title']}")
 
     home = config.get("home") or {}
@@ -961,15 +995,35 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
         ("blog.html", "blog/index.html", {"active": "blog"}),
         ("404.html", "404.html", {"active": ""}),
     ]
+    # Previews of the fixed pages; `og_images:` in site.yml replaces any of them.
+    overrides = config.get("og_images") or {}
+    author = config.get("author") or {}
+    previews = {
+        "home": {"title": author_name or config.get("title", ""),
+                 "summary": author.get("intro") or config.get("description", "")},
+        "blog": {"title": "Notes, notebooks and experiments", "eyebrow": "Blog",
+                 "summary": (config.get("blog") or {}).get("tagline", "")},
+        "projects": {"title": "Research and personal work", "eyebrow": "Projects",
+                     "summary": "Research work, coursework and things built out of curiosity."},
+        "about": {"title": "About me", "eyebrow": "About", "summary": author.get("bio", "")},
+    }
     for template_name, target, extra in pages:
+        name = template_name.removesuffix(".html")
+        if name in previews:
+            url = "/" + target.removesuffix("index.html")
+            extra = {**extra, "og_image": make_og_image(
+                out_dir, url, overrides.get(name), config, footer=footer(), **previews[name])}
         write(out_dir / target, env.get_template(template_name).render(**ctx, **extra))
         log(f"+ /{target}")
 
     project_template = env.get_template("project.html")
     for project in projects:
         target = f"projects/{project['slug']}/index.html"
+        image = make_og_image(out_dir, project["url"], project.get("image"), config,
+                              title=project["name"], eyebrow="Project",
+                              summary=str(project.get("text", "")), footer=footer())
         write(out_dir / target, project_template.render(
-            **ctx, active="projects", project=project))
+            **ctx, active="projects", project=project, og_image=image))
         log(f"+ /{target}  ({len(project['posts'])} post(s))")
 
     if ASSETS_DIR.is_dir():

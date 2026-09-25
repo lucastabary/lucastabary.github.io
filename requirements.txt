@@ -8,3 +8,4 @@ Pygments>=2.18
 PyYAML>=6.0
 pypdf>=4.2
 ipython>=8.24        # provides the IPython3 lexer so %magics highlight correctly
+Pillow>=10.3          # draws the Open Graph preview images

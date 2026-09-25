@@ -42,6 +42,7 @@
   {% if project.context %}<p class="project-meta">{{ project.context }}</p>{% endif %}
   <h3><a href="{{ project.url }}">{{ project.name }}</a></h3>
   <p class="project-text">{{ project.text }}</p>
+  {% if project.activity %}{{ activity_graph(project.activity, weeks=26, labels=False) }}{% endif %}
   <p class="project-foot">
     {% if project.posts %}
     <a href="{{ project.url }}">{{ project.posts | length }} post{{ '' if project.posts | length == 1 else 's' }} &rarr;</a>
@@ -52,3 +53,39 @@
   </p>
 </article>
 {% endmacro %}
+
+{# GitHub-style commit heatmap: one column per week (Monday on top), one square per day.
+   `weeks` keeps only the most recent columns; `labels` adds month and weekday names. #}
+{% macro activity_graph(activity, weeks=53, labels=True) %}
+{% set columns = activity.weeks[-weeks:] %}
+{% set first_week = activity.weeks | length - columns | length %}
+{% set step, cell = 13, 10 %}
+{% set left, top = (30 if labels else 0), (18 if labels else 0) %}
+{% set total = columns | sum(attribute='total') %}
+<figure class="activity{% if not labels %} activity-compact{% endif %}">
+  <svg viewBox="0 0 {{ left + columns | length * step - 3 }} {{ top + 7 * step - 3 }}"
+       role="img" aria-label="{{ total }} commits in the last {{ columns | length }} weeks">
+    {% if labels %}
+    {% for month in activity.months if month.week >= first_week %}
+    <text class="activity-label" x="{{ left + (month.week - first_week) * step }}" y="10">{{ month.label }}</text>
+    {% endfor %}
+    {% for row, name in [(0, 'Mon'), (2, 'Wed'), (4, 'Fri')] %}
+    <text class="activity-label" x="0" y="{{ top + row * step + 9 }}">{{ name }}</text>
+    {% endfor %}
+    {% endif %}
+    {% for column in columns %}
+    {% set x = left + loop.index0 * step %}
+    {% for day in column.days if day %}
+    <rect class="lvl-{{ day.level }}" x="{{ x }}" y="{{ top + loop.index0 * step }}" width="{{ cell }}" height="{{ cell }}" rx="2"><title>{{ day.count or 'No' }} commit{{ '' if day.count == 1 else 's' }} on {{ day.label }}</title></rect>
+    {% endfor %}
+    {% endfor %}
+  </svg>
+  <figcaption>
+    <span>{{ total }} commit{{ '' if total == 1 else 's' }} in the last {{ 'year' if columns | length >= 52 else (columns | length) ~ ' weeks' }}{% if labels and activity.last %} &middot; last on {{ activity.last }}{% endif %}</span>
+    {% if labels %}
+    <span class="activity-legend" aria-hidden="true">Less {% for level in range(5) %}<i class="lvl-{{ level }}"></i>{% endfor %} More</span>
+    {% endif %}
+  </figcaption>
+</figure>
+{% endmacro %}
+

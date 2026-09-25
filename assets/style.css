@@ -263,6 +263,29 @@ main { min-height: 60vh; }
   font-family: var(--font-sans); font-size: .76rem; color: var(--text-faint); margin: .3rem 0 0;
 }
 .project .project-meta { margin: 0; }
+/* --- commit activity heatmap -------------------------------------------- */
+
+:root { --activity: var(--accent); }
+.activity { margin: 0; }
+.activity svg { display: block; width: 100%; height: auto; }
+.activity-compact { margin-top: 1rem; }
+.activity-compact svg { max-width: 22rem; }
+.activity rect.lvl-0, .activity-legend .lvl-0 { fill: var(--surface-2); background: var(--surface-2); }
+.activity rect.lvl-1, .activity-legend .lvl-1 { fill: color-mix(in srgb, var(--activity) 28%, var(--surface-2)); background: color-mix(in srgb, var(--activity) 28%, var(--surface-2)); }
+.activity rect.lvl-2, .activity-legend .lvl-2 { fill: color-mix(in srgb, var(--activity) 50%, var(--surface-2)); background: color-mix(in srgb, var(--activity) 50%, var(--surface-2)); }
+.activity rect.lvl-3, .activity-legend .lvl-3 { fill: color-mix(in srgb, var(--activity) 75%, var(--surface-2)); background: color-mix(in srgb, var(--activity) 75%, var(--surface-2)); }
+.activity rect.lvl-4, .activity-legend .lvl-4 { fill: var(--activity); background: var(--activity); }
+.activity rect { stroke: color-mix(in srgb, var(--text) 6%, transparent); stroke-width: .5; }
+.activity-label { font-family: var(--font-sans); font-size: 8.5px; fill: var(--text-faint); }
+.activity figcaption {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: .3rem 1rem; margin-top: .55rem;
+  font-family: var(--font-sans); font-size: .76rem; color: var(--text-faint);
+}
+.activity-legend { display: inline-flex; align-items: center; gap: 3px; }
+.activity-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+.activity-legend i:first-child { margin-left: .3rem; }
+.activity-legend i:last-child { margin-right: .3rem; }
+
 /* --- post cards ---------------------------------------------------------- */
 
 .post-list { display: grid; gap: .25rem; }

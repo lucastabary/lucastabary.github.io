@@ -36,12 +36,15 @@ from typing import Any
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+import activity
+
 ROOT = Path(__file__).resolve().parent
 POSTS_DIR = ROOT / "posts"
 TEMPLATES_DIR = ROOT / "templates"
 ASSETS_DIR = ROOT / "assets"
 STATIC_DIR = ROOT / "static"
 CACHE_DIR = ROOT / ".cache" / "sources"
+ACTIVITY_CACHE_DIR = ROOT / ".cache" / "activity"
 
 POST_EXTS = {".ipynb", ".md", ".markdown", ".html", ".htm", ".pdf"}
 IGNORED_NAMES = {"readme.md", "readme", "meta.yml", "meta.yaml", ".gitkeep"}
@@ -905,13 +908,20 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
     )
     env.filters["markdown"] = render_markdown_text
 
-    # Each project carries its own identity and the posts pulled from its repo.
+    # Each project carries its own identity, the posts pulled from its repo, and
+    # the commit activity of that repo (`activity: false` in site.yml turns it off).
+    today = dt.date.today()
     projects = []
     for entry in config.get("projects") or []:
         ref = project_ref(entry)
+        commits = None
+        if entry.get("repo") and entry.get("activity", True):
+            commits = activity.commit_dates(entry["repo"], ACTIVITY_CACHE_DIR,
+                                            refresh, offline, today)
         projects.append({
             **entry, **ref,
             "posts": [p for p in posts if p.project and p.project["slug"] == ref["slug"]],
+            "activity": activity.grid(commits, today) if commits is not None else None,
         })
 
     tags = sorted({t for p in posts for t in p.tags}, key=str.lower)

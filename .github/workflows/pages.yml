@@ -43,6 +43,9 @@ jobs:
       # problems in project repos only warn, so they never block the daily rebuild.
       - name: Build the site
         run: python build.py --strict
+        env:
+          # Lifts the GitHub API rate limit for the project activity heatmaps.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

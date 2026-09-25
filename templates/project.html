@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros.html" import post_card %}
+
+{% block title %}{{ project.name }} &middot; {{ author.name }}{% endblock %}
+{% block description %}{{ project.text }}{% endblock %}
+{% block og_title %}{{ project.name }}{% endblock %}
+{% block og_description %}{{ project.text }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <p class="crumb"><a href="/projects/">&larr; Projects</a></p>
+    <h1>{{ project.name }}</h1>
+    {% if project.context or project.year %}
+    <p class="project-meta">
+      {{ project.context }}{% if project.context and project.year %} &middot; {% endif %}{{ project.year }}
+    </p>
+    {% endif %}
+    <p class="lede">{{ project.text }}</p>
+    {% if project.links %}
+    <p class="hero-links">
+      {% for link in project.links %}<a href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+    </p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <h2 class="section-title">Notes from this project</h2>
+    {% if project.posts %}
+    <div class="post-list">
+      {% for post in project.posts %}{{ post_card(post, show_project=False) }}{% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">
+      No notes yet.
+      {% if project.repo and project.blog %}
+      They will appear here as soon as <code>{{ project.blog }}/</code> in
+      <a href="{{ project.repo_url }}">{{ project.repo }}</a> holds a
+      <code>.md</code>, <code>.ipynb</code>, <code>.html</code> or <code>.pdf</code> file.
+      {% endif %}
+    </p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

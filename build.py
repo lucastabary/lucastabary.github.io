@@ -40,6 +40,7 @@ POSTS_DIR = ROOT / "posts"
 TEMPLATES_DIR = ROOT / "templates"
 ASSETS_DIR = ROOT / "assets"
 STATIC_DIR = ROOT / "static"
+CACHE_DIR = ROOT / ".cache" / "sources"
 
 POST_EXTS = {".ipynb", ".md", ".markdown", ".html", ".htm", ".pdf"}
 IGNORED_NAMES = {"readme.md", "readme", "meta.yml", "meta.yaml", ".gitkeep"}
@@ -71,11 +72,27 @@ def titleize(slug: str) -> str:
     return " ".join(words).strip().capitalize() or "Untitled"
 
 
+ANCHOR_RE = re.compile(
+    r'(?is)<a[^>]*class="[^"]*(?:heading-anchor|anchor-link)[^"]*"[^>]*>.*?</a>')
+FIRST_PARA_RE = re.compile(r"(?is)<p[^>]*>(.*?)</p>")
+
+
 def strip_tags(html_text: str) -> str:
     text = re.sub(r"(?is)<(script|style|svg)\b.*?</\1>", " ", html_text)
+    # Permalink anchors would otherwise leak "#" and "¶" into summaries.
+    text = ANCHOR_RE.sub(" ", text)
     text = TAG_RE.sub(" ", text)
     text = html_lib.unescape(text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def first_paragraph(html_text: str) -> str:
+    """Opening paragraph, which makes a far better blurb than the whole body."""
+    for match in FIRST_PARA_RE.finditer(html_text):
+        text = strip_tags(match.group(1))
+        if len(text.split()) >= 5:
+            return text
+    return ""
 
 
 def summarise(text: str, words: int = 42) -> str:
@@ -133,12 +150,18 @@ def split_front_matter(text: str) -> tuple[dict, str]:
     return data, text[match.end():]
 
 
-def git_date(path: Path) -> dt.date | None:
-    """Date of the last commit touching ``path`` (falls back to mtime)."""
+def git_date(path: Path, repo_root: Path | None = None) -> dt.date | None:
+    """Date of the last commit touching ``path`` (falls back to mtime).
+
+    Project repositories are cloned shallow, so there the answer is the tip
+    commit's date rather than the file's own history — good enough as a
+    fallback, and the build warns when a post relies on it.
+    """
     try:
         result = subprocess.run(
             ["git", "log", "-1", "--format=%aI", "--", str(path)],
-            cwd=ROOT, capture_output=True, text=True, timeout=20, check=False,
+            cwd=str(repo_root or ROOT), capture_output=True, text=True,
+            timeout=20, check=False,
         )
         stamp = result.stdout.strip()
         if stamp:
@@ -172,6 +195,7 @@ class Post:
     standalone_html: str | None = None
     pdf_name: str | None = None
     pdf_pages: int | None = None
+    project: dict | None = None    # set when the post came from a project repo
 
     KIND_LABELS = {
         "notebook": "Notebook",
@@ -182,15 +206,18 @@ class Post:
 
     @property
     def url(self) -> str:
+        """Project posts are namespaced by project, so two repos never collide."""
+        if self.project:
+            return f"/blog/{self.project['slug']}/{self.slug}/"
         return f"/blog/{self.slug}/"
 
     @property
     def source_url(self) -> str | None:
-        return f"/blog/{self.slug}/{self.raw_name}" if self.raw_name else None
+        return f"{self.url}{self.raw_name}" if self.raw_name else None
 
     @property
     def pdf_url(self) -> str | None:
-        return f"/blog/{self.slug}/{self.pdf_name}" if self.pdf_name else None
+        return f"{self.url}{self.pdf_name}" if self.pdf_name else None
 
     @property
     def reading_time(self) -> int:
@@ -235,12 +262,12 @@ def find_main_file(folder: Path) -> Path | None:
     return candidates[0]
 
 
-def discover() -> list[tuple[Path, Path | None]]:
-    """Return (source file, bundle folder or None) for every post in posts/."""
-    if not POSTS_DIR.is_dir():
+def discover(directory: Path) -> list[tuple[Path, Path | None]]:
+    """Return (source file, bundle folder or None) for every post in a folder."""
+    if not directory.is_dir():
         return []
     found: list[tuple[Path, Path | None]] = []
-    for entry in sorted(POSTS_DIR.iterdir()):
+    for entry in sorted(directory.iterdir()):
         # "." and "_" mean "parked here, not published" — same rule inside bundles.
         if entry.name.startswith((".", "_")) or entry.name.lower() in IGNORED_NAMES:
             continue
@@ -257,6 +284,86 @@ def discover() -> list[tuple[Path, Path | None]]:
                 continue
             found.append((entry, None))
     return found
+
+
+# ---------------------------------------------------------------------------
+# project repositories
+# ---------------------------------------------------------------------------
+
+def git(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", *args], cwd=str(cwd) if cwd else None,
+        capture_output=True, text=True, check=False, timeout=180,
+    )
+
+
+def project_ref(project: dict) -> dict:
+    """The identity a post carries when it comes from a project repo."""
+    slug = slugify(project.get("slug") or project.get("name") or "project")
+    repo = project.get("repo")
+    name = project.get("name") or slug
+    return {
+        "slug": slug,
+        "name": name,
+        # Chips and badges need something that fits; `short` in site.yml, else the name.
+        "short": project.get("short") or name,
+        "repo": repo,
+        "repo_url": f"https://github.com/{repo}" if repo else None,
+        "url": f"/projects/{slug}/",
+    }
+
+
+def fetch_project_blog(project: dict, refresh: bool, offline: bool) -> Path | None:
+    """Shallow sparse-clone a project's blog folder into the local cache.
+
+    Only the configured folder is checked out, and only its latest commit, so
+    this stays fast even for repositories carrying large datasets or models.
+    """
+    repo = project.get("repo")
+    folder = project.get("blog")
+    if not repo or not folder:
+        return None
+
+    branch = project.get("branch")
+    dest = CACHE_DIR / repo.replace("/", "__")
+    blog_path = dest / folder
+
+    if dest.exists() and not refresh:
+        return blog_path if blog_path.is_dir() else None
+
+    if offline:
+        log(f"! {repo} not in the cache and --offline is set — skipped")
+        return None
+
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    if dest.exists():
+        clean_output(dest)
+        try:
+            dest.rmdir()
+        except OSError:
+            pass
+
+    clone = ["clone", "--depth", "1", "--filter=blob:none", "--sparse",
+             "--quiet", f"https://github.com/{repo}.git", str(dest)]
+    if branch:
+        clone[1:1] = ["--branch", branch]
+
+    result = git(*clone)
+    if result.returncode != 0:
+        raise SystemExit(
+            f"Could not clone {repo}: {result.stderr.strip() or 'git failed'}\n"
+            "Check the repo name and branch in site.yml, or build with --offline."
+        )
+
+    result = git("sparse-checkout", "set", folder, cwd=dest)
+    if result.returncode != 0:
+        raise SystemExit(f"Could not sparse-checkout {folder} from {repo}: "
+                         f"{result.stderr.strip()}")
+
+    if not blog_path.is_dir():
+        log(f"- {repo} has no {folder}/ yet — nothing to pull")
+        return None
+    return blog_path
 
 
 def read_sidecar(source: Path, bundle: Path | None) -> dict:
@@ -409,7 +516,8 @@ RENDERERS = {
 }
 
 
-def build_post(source: Path, bundle: Path | None) -> Post:
+def build_post(source: Path, bundle: Path | None,
+               project: dict | None = None, repo_root: Path | None = None) -> Post:
     rendered = RENDERERS[source.suffix.lower()](source)
     meta = {**rendered.get("meta", {}), **read_sidecar(source, bundle)}
 
@@ -418,13 +526,18 @@ def build_post(source: Path, bundle: Path | None) -> Post:
     slug = slugify(meta.get("slug") or name_rest)
 
     title = str(meta.get("title") or rendered.get("title") or titleize(name_rest)).strip()
-    date = coerce_date(meta.get("date")) or file_date or git_date(source)
+    date = coerce_date(meta.get("date")) or file_date
+    if date is None:
+        date = git_date(source, repo_root)
+        if project:
+            log(f"! {source.name} has no date; using the {project['repo']} tip commit. "
+                "Name it YYYY-MM-DD-... or set date: to be exact.")
 
     body = rendered.get("body") or ""
     plain = strip_tags(body) if body else ""
     summary = str(meta.get("summary") or meta.get("description") or "").strip()
-    if not summary and plain:
-        summary = summarise(plain)
+    if not summary and body:
+        summary = summarise(first_paragraph(body) or plain)
     if not summary and rendered["kind"] == "pdf":
         pages = rendered.get("pages")
         summary = "PDF document" + (f", {pages} pages." if pages else ".")
@@ -443,6 +556,7 @@ def build_post(source: Path, bundle: Path | None) -> Post:
         bundle=bundle,
         standalone_html=rendered.get("standalone"),
         pdf_pages=rendered.get("pages"),
+        project=project,
     )
 
 
@@ -512,7 +626,7 @@ def write(path: Path, text: str) -> None:
 
 
 def write_post(post: Post, out_dir: Path, env: Environment, ctx: dict) -> None:
-    post_dir = out_dir / "blog" / post.slug
+    post_dir = out_dir / post.url.strip("/")
     post_dir.mkdir(parents=True, exist_ok=True)
 
     if post.bundle:
@@ -597,26 +711,53 @@ def build_feed(posts: list[Post], config: dict) -> str:
     )
 
 
-def build(out_dir: Path, include_drafts: bool = False) -> list[Post]:
+def collect_posts(config: dict, include_drafts: bool,
+                  refresh: bool, offline: bool) -> list[Post]:
+    """Posts from posts/, then from every project repo that declares a blog."""
+    posts: list[Post] = []
+
+    def add(source: Path, bundle: Path | None,
+            project: dict | None, repo_root: Path | None) -> None:
+        post = build_post(source, bundle, project, repo_root)
+        if post.draft and not include_drafts:
+            log(f"- {source.name} (draft, skipped)")
+            return
+        posts.append(post)
+
+    for source, bundle in discover(POSTS_DIR):
+        add(source, bundle, None, ROOT)
+
+    for project in config.get("projects") or []:
+        if not project.get("blog") or not project.get("repo"):
+            continue
+        blog_dir = fetch_project_blog(project, refresh, offline)
+        if not blog_dir:
+            continue
+        ref = project_ref(project)
+        found = discover(blog_dir)
+        for source, bundle in found:
+            add(source, bundle, ref, blog_dir.parent)
+        log(f"~ {project['repo']}: {len(found)} post(s)")
+
+    # Slugs only need to be unique within a project (or within posts/).
+    seen: set[tuple[str, str]] = set()
+    for post in posts:
+        scope = post.project["slug"] if post.project else ""
+        if (scope, post.slug) in seen:
+            original, post.slug = post.slug, f"{post.slug}-{post.kind}"
+            log(f"! two posts want the slug '{original}'; this one becomes '{post.slug}'")
+        seen.add((scope, post.slug))
+
+    posts.sort(key=lambda p: (p.date or dt.date.min, p.title), reverse=True)
+    return posts
+
+
+def build(out_dir: Path, include_drafts: bool = False,
+          refresh: bool = False, offline: bool = False) -> list[Post]:
     config = yaml.safe_load((ROOT / "site.yml").read_text(encoding="utf-8")) or {}
 
     print("Building site")
-    posts: list[Post] = []
-    for source, bundle in discover():
-        post = build_post(source, bundle)
-        if post.draft and not include_drafts:
-            log(f"- {source.name} (draft, skipped)")
-            continue
-        posts.append(post)
-
-    seen: dict[str, Post] = {}
-    for post in posts:
-        if post.slug in seen:
-            original, post.slug = post.slug, f"{post.slug}-{post.kind}"
-            log(f"! two posts want the slug '{original}'; this one becomes '{post.slug}'")
-        seen[post.slug] = post
-
-    posts.sort(key=lambda p: (p.date or dt.date.min, p.title), reverse=True)
+    posts = collect_posts(config, include_drafts, refresh, offline)
 
     clean_output(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -628,7 +769,15 @@ def build(out_dir: Path, include_drafts: bool = False) -> list[Post]:
         lstrip_blocks=True,
     )
 
-    projects = config.get("projects") or []
+    # Each project carries its own identity and the posts pulled from its repo.
+    projects = []
+    for entry in config.get("projects") or []:
+        ref = project_ref(entry)
+        projects.append({
+            **entry, **ref,
+            "posts": [p for p in posts if p.project and p.project["slug"] == ref["slug"]],
+        })
+
     tags = sorted({t for p in posts for t in p.tags}, key=str.lower)
     ctx = {
         "config": config,
@@ -636,6 +785,7 @@ def build(out_dir: Path, include_drafts: bool = False) -> list[Post]:
         "site_title": config.get("title", "Site"),
         "posts": posts,
         "projects": projects,
+        "projects_with_posts": [p for p in projects if p["posts"]],
         "tags": tags,
         "build_date": dt.date.today(),
     }
@@ -656,6 +806,13 @@ def build(out_dir: Path, include_drafts: bool = False) -> list[Post]:
     for template_name, target, extra in pages:
         write(out_dir / target, env.get_template(template_name).render(**ctx, **extra))
         log(f"+ /{target}")
+
+    project_template = env.get_template("project.html")
+    for project in projects:
+        target = f"projects/{project['slug']}/index.html"
+        write(out_dir / target, project_template.render(
+            **ctx, active="projects", project=project))
+        log(f"+ /{target}  ({len(project['posts'])} post(s))")
 
     if ASSETS_DIR.is_dir():
         copy_tree(ASSETS_DIR, out_dir / "assets")
@@ -687,13 +844,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--drafts", action="store_true", help="include posts marked draft")
     parser.add_argument("--serve", nargs="?", const=8000, type=int, metavar="PORT",
                         help="serve the result locally after building")
+    parser.add_argument("--refresh", action="store_true",
+                        help="re-clone project blogs instead of reusing the cache")
+    parser.add_argument("--offline", action="store_true",
+                        help="never reach the network; use whatever is already cached")
     args = parser.parse_args(argv)
 
     out_dir = Path(args.out)
     if not out_dir.is_absolute():
         out_dir = ROOT / out_dir
 
-    build(out_dir, include_drafts=args.drafts)
+    build(out_dir, include_drafts=args.drafts,
+          refresh=args.refresh, offline=args.offline)
     if args.serve:
         serve(out_dir, args.serve)
     return 0

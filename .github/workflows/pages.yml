@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Project repositories do not notify this one, so rebuild daily to pick up
+  # posts added to their blog/ folders. Run it by hand from the Actions tab to
+  # publish one immediately.
+  schedule:
+    - cron: "17 6 * * *"
   workflow_dispatch:
 
 # Least privilege: read the repo, publish to Pages.

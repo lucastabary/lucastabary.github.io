@@ -48,14 +48,24 @@ interests:
       Spectral properties of graphs (Laplacian, adjacency spectrum) and their
       use in geometric deep learning and graph neural network optimisation.
 
-# Add a project by appending an entry here.
-#   featured: true  -> also shown on the home page
-#   status: a short label rendered as a chip (optional)
+# Add a project by appending an entry here. Each one gets its own page at
+# /projects/<slug>/.
+#
+#   featured: true   also show it on the home page
+#   repo:            owner/name on GitHub
+#   short:           compact label for chips and post badges (defaults to name)
+#   blog:            folder in that repo whose posts join this site.
+#                    Remove the key to stop pulling posts from that project.
+#   branch:          only if the posts do not live on the default branch
 projects:
   - name: Symbolic music generation with recurrent neural networks
+    slug: music-generation-rnn
+    short: Music generation
     context: Personal project
     year: 2025
     featured: true
+    repo: lucastabary/Project4
+    blog: blog
     text: >-
       A study of LSTM architectures for MIDI sequence generation, focused on how
       well the model captures long-range temporal structure in classical music
@@ -65,9 +75,13 @@ projects:
         url: https://github.com/lucastabary/Project4/
 
   - name: Near-infrared spectroscopy analysis of plant specimens
+    slug: nirs-spectroscopy
+    short: NIRS spectroscopy
     context: Research initiation project • Telecom Nancy
     year: 2025
     featured: true
+    repo: lucastabary/PIDR_RICOCHET
+    blog: blog
     text: >-
       Latent space exploration of NIRS measurements for the chemical
       characterisation of plant specimens, using dimensionality reduction
@@ -77,14 +91,18 @@ projects:
         url: https://github.com/lucastabary/PIDR_RICOCHET
 
   - name: EarTrainer
+    slug: eartrainer
+    short: EarTrainer
     context: Personal project
     year: 2024
     featured: false
+    repo: lucastabary/EarTrainer
+    blog: blog
     text: >-
       A small web tool for practising interval and chord recognition by ear.
     links:
       - label: Code
-        url: https://github.com/lucastabary
+        url: https://github.com/lucastabary/EarTrainer
 
 blog:
   # Text shown at the top of the blog index.

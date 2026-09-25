@@ -208,6 +208,7 @@ class Post:
     issues: list[str] = field(default_factory=list)  # publishing problems, see --strict
     parent: dict | None = None     # {url, title} of the folder page a nested post belongs to
     folder: dict | None = None     # {url, title} of its multi-post folder, for the blog filter
+    sequence: dict | None = None   # {prev, next, index, total, title, url} inside its folder
     image: str | None = None       # `image:` from the metadata: overrides the generated preview
     og_image: str | None = None    # URL of the preview image finally used
 
@@ -880,6 +881,18 @@ def link_folder_pages(posts: list[Post]) -> tuple[list[dict], list[dict]]:
             post.parent = parent
         # The folder's own post belongs to it too, so filtering shows the whole folder.
         everyone = members + ([owner] if owner else [])
+        # Reading order: the folder's own post first, then the others by filename,
+        # so 01-intro.md, 02-method.ipynb read as a series with previous / next links.
+        ordered = ([owner] if owner else []) + members
+        for i, post in enumerate(ordered):
+            link = lambda other: {"url": other.url, "title": other.title} if other else None
+            post.sequence = {
+                "prev": link(ordered[i - 1] if i > 0 else None),
+                "next": link(ordered[i + 1] if i + 1 < len(ordered) else None),
+                "index": i + 1,
+                "total": len(ordered),
+                **parent,
+            }
         folder = {**parent, "key": url.removeprefix("/blog/").strip("/")}
         for post in everyone:
             post.folder = folder

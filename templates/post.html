@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import post_crumb %}
+{% from "_macros.html" import post_crumb, sequence_nav %}
 
 {% block title %}{{ post.title }}{% endblock %}
 {% block description %}{{ post.summary }}{% endblock %}
@@ -37,6 +37,8 @@
       {{ post.body | safe }}
     </div>
   </div>
+
+  {% if post.sequence %}<div class="wrap">{{ sequence_nav(post) }}</div>{% endif %}
 
   <footer class="post-foot">
     <div class="wrap">

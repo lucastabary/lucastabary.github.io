@@ -286,6 +286,27 @@ main { min-height: 60vh; }
 .activity-legend i:first-child { margin-left: .3rem; }
 .activity-legend i:last-child { margin-right: .3rem; }
 
+/* --- previous / next within a folder -------------------------------------- */
+
+.sequence { margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--border); font-family: var(--font-sans); }
+.sequence-head { display: flex; justify-content: space-between; gap: 1rem; margin: 0 0 .9rem; font-size: .8rem; }
+.sequence-head a { color: var(--text-muted); font-weight: 500; }
+.sequence-links { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.sequence-link {
+  display: grid; gap: .2rem; padding: .85rem 1rem; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); transition: border-color .15s, box-shadow .15s;
+}
+.sequence-link:hover { text-decoration: none; border-color: var(--accent); box-shadow: var(--shadow); }
+.sequence-next { text-align: right; grid-column: 2; }
+.sequence-dir { font-size: .74rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); }
+.sequence-title { color: var(--text); font-weight: 500; font-size: .95rem; line-height: 1.35; }
+.sequence-link:hover .sequence-title { color: var(--accent); }
+.sequence + .post-foot, .wrap:has(.sequence) + .post-foot { margin-top: 2rem; }
+@media (max-width: 520px) {
+  .sequence-links { grid-template-columns: 1fr; }
+  .sequence-next { grid-column: 1; }
+}
+
 /* --- post cards ---------------------------------------------------------- */
 
 .post-list { display: grid; gap: .25rem; }

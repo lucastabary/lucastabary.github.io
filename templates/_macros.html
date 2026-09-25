@@ -89,3 +89,28 @@
 </figure>
 {% endmacro %}
 
+{# Previous / next links between the posts of one folder, in reading order. #}
+{% macro sequence_nav(post) %}
+{% if post.sequence %}
+<nav class="sequence" aria-label="{{ post.sequence.title }}">
+  <p class="sequence-head">
+    <a href="{{ post.sequence.url }}">{{ post.sequence.title }}</a>
+    <span class="dim">{{ post.sequence.index }} / {{ post.sequence.total }}</span>
+  </p>
+  <div class="sequence-links">
+    {% if post.sequence.prev %}
+    <a class="sequence-link sequence-prev" href="{{ post.sequence.prev.url }}" rel="prev">
+      <span class="sequence-dir">&larr; Previous</span>
+      <span class="sequence-title">{{ post.sequence.prev.title }}</span>
+    </a>
+    {% else %}<span></span>{% endif %}
+    {% if post.sequence.next %}
+    <a class="sequence-link sequence-next" href="{{ post.sequence.next.url }}" rel="next">
+      <span class="sequence-dir">Next &rarr;</span>
+      <span class="sequence-title">{{ post.sequence.next.title }}</span>
+    </a>
+    {% endif %}
+  </div>
+</nav>
+{% endif %}
+{% endmacro %}

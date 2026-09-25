@@ -28,9 +28,8 @@
   if (list) {
     var cards = Array.prototype.slice.call(list.querySelectorAll(".post-card"));
     var search = document.querySelector("[data-search]");
-    var tagButtons = Array.prototype.slice.call(document.querySelectorAll(".tag-filter"));
     var noResults = document.querySelector("[data-no-results]");
-    var activeTag = "";
+    var active = { tag: "", project: "" };
 
     function apply() {
       var query = (search && search.value || "").trim().toLowerCase();
@@ -39,9 +38,9 @@
       cards.forEach(function (card) {
         var tags = (card.dataset.tags || "").split("|").filter(Boolean);
         var haystack = ((card.textContent || "") + " " + (card.dataset.text || "")).toLowerCase();
-        var matchesTag = !activeTag || tags.indexOf(activeTag) !== -1;
-        var matchesText = !query || haystack.indexOf(query) !== -1;
-        var show = matchesTag && matchesText;
+        var show = (!active.tag || tags.indexOf(active.tag) !== -1)
+          && (!active.project || card.dataset.project === active.project)
+          && (!query || haystack.indexOf(query) !== -1);
         card.hidden = !show;
         if (show) visible++;
       });
@@ -51,13 +50,20 @@
 
     if (search) search.addEventListener("input", apply);
 
-    tagButtons.forEach(function (button) {
-      button.addEventListener("click", function () {
-        activeTag = button.dataset.tag === activeTag ? "" : (button.dataset.tag || "");
-        tagButtons.forEach(function (other) {
-          other.classList.toggle("is-active", (other.dataset.tag || "") === activeTag);
+    // One handler per filter dimension; clicking an active chip clears it.
+    ["tag", "project"].forEach(function (kind) {
+      var buttons = Array.prototype.slice.call(
+        document.querySelectorAll(".chip[data-" + kind + "]"));
+
+      buttons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var value = button.dataset[kind] || "";
+          active[kind] = value === active[kind] ? "" : value;
+          buttons.forEach(function (other) {
+            other.classList.toggle("is-active", (other.dataset[kind] || "") === active[kind]);
+          });
+          apply();
         });
-        apply();
       });
     });
 

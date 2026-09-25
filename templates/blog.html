@@ -22,12 +22,26 @@
         <span class="visually-hidden">Search posts</span>
         <input type="search" id="post-search" placeholder="Search posts" autocomplete="off" data-search>
       </label>
+      {% if projects_with_posts %}
+      <div class="filter-group">
+        <span class="filter-label">Project</span>
+        <div class="chip-row" role="group" aria-label="Filter by project">
+          <button type="button" class="chip is-active" data-project="">All</button>
+          {% for project in projects_with_posts %}
+          <button type="button" class="chip" data-project="{{ project.slug }}">{{ project.short }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
       {% if tags %}
-      <div class="tag-filters" role="group" aria-label="Filter by tag">
-        <button type="button" class="tag-filter is-active" data-tag="">All</button>
-        {% for tag in tags %}
-        <button type="button" class="tag-filter" data-tag="{{ tag | lower }}">{{ tag }}</button>
-        {% endfor %}
+      <div class="filter-group">
+        {% if projects_with_posts %}<span class="filter-label">Tag</span>{% endif %}
+        <div class="chip-row" role="group" aria-label="Filter by tag">
+          <button type="button" class="chip is-active" data-tag="">All</button>
+          {% for tag in tags %}
+          <button type="button" class="chip" data-tag="{{ tag | lower }}">{{ tag }}</button>
+          {% endfor %}
+        </div>
       </div>
       {% endif %}
     </div>
@@ -39,7 +53,8 @@
     {% else %}
     <p class="empty">
       Nothing here yet. Drop a <code>.ipynb</code>, <code>.md</code>, <code>.html</code> or
-      <code>.pdf</code> file into <code>posts/</code> and it will show up.
+      <code>.pdf</code> file into <code>posts/</code> — or into the <code>blog/</code>
+      folder of one of the project repos — and it will show up.
     </p>
     {% endif %}
   </div>

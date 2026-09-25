@@ -9,7 +9,13 @@
 <article class="post post-{{ post.kind }}">
   <header class="post-head">
     <div class="wrap">
-      <p class="crumb"><a href="/blog/">&larr; Blog</a></p>
+      <p class="crumb">
+        <a href="/blog/">&larr; Blog</a>
+        {% if post.project %}
+        <span class="crumb-sep">/</span>
+        <a href="{{ post.project.url }}">{{ post.project.name }}</a>
+        {% endif %}
+      </p>
       <h1>{{ post.title }}</h1>
       <div class="post-meta">
         <time datetime="{{ post.date_iso }}">{{ post.date_label }}</time>
@@ -40,6 +46,9 @@
   <footer class="post-foot">
     <div class="wrap">
       <a href="/blog/">&larr; All posts</a>
+      {% if post.project %}
+      <a href="{{ post.project.repo_url }}">Source repository: {{ post.project.repo }}</a>
+      {% endif %}
       {% if post.source_url %}
       <a href="{{ post.source_url }}" download>Download the {{ post.kind_label | lower }}</a>
       {% endif %}

@@ -219,6 +219,8 @@ main { min-height: 60vh; }
 
 .project-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1.25rem; flex-wrap: wrap; }
 .project-head h3 { margin: 0; flex: 1 1 18rem; }
+.project-head h3 a { color: var(--text); }
+.project-head h3 a:hover { color: var(--accent); text-decoration: none; }
 .project-links { margin: 0; display: flex; gap: 1rem; white-space: nowrap; }
 .project-links a { font-family: var(--font-sans); font-size: .82rem; font-weight: 500; }
 
@@ -249,6 +251,17 @@ main { min-height: 60vh; }
 .kind-notebook { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 .dim { color: var(--text-faint); }
 
+/* Badge on posts pulled from a project repository. */
+.project-chip {
+  font-family: var(--font-sans); font-size: .72rem; font-weight: 500;
+  color: var(--text-muted); border: 1px solid var(--border); border-radius: 999px;
+  padding: .1rem .55rem;
+}
+.project-chip::before { content: "\2197"; margin-right: .25rem; opacity: .6; }
+.project-chip:hover { color: var(--accent); border-color: var(--accent); text-decoration: none; }
+
+.crumb-sep { color: var(--text-faint); margin: 0 .35rem; }
+
 .tag-row { display: flex; flex-wrap: wrap; gap: .4rem; margin: .7rem 0 0; }
 .tag {
   font-family: var(--font-sans); font-size: .74rem; color: var(--text-muted);
@@ -270,14 +283,20 @@ main { min-height: 60vh; }
 .search input::placeholder { color: var(--text-faint); }
 .search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
-.tag-filters { display: flex; flex-wrap: wrap; gap: .4rem; }
-.tag-filter {
+.filter-group { display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.filter-label {
+  font-family: var(--font-sans); font-size: .7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .09em; color: var(--text-faint);
+  min-width: 3.2rem;
+}
+.chip-row { display: flex; flex-wrap: wrap; gap: .4rem; flex: 1 1 18rem; }
+.chip {
   font-family: var(--font-sans); font-size: .78rem; font-weight: 500; cursor: pointer;
   padding: .3rem .7rem; border-radius: 999px;
   background: transparent; border: 1px solid var(--border); color: var(--text-muted);
 }
-.tag-filter:hover { color: var(--text); border-color: var(--text-faint); }
-.tag-filter.is-active { background: var(--text); border-color: var(--text); color: var(--bg); }
+.chip:hover { color: var(--text); border-color: var(--text-faint); }
+.chip.is-active { background: var(--text); border-color: var(--text); color: var(--bg); }
 
 /* --- post pages ---------------------------------------------------------- */
 

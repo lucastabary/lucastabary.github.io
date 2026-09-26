@@ -24,6 +24,7 @@ import datetime as dt
 import hashlib
 import html as html_lib
 import json
+import os
 import pickle
 import re
 import shutil
@@ -1205,15 +1206,137 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
     return posts
 
 
-def serve(out_dir: Path, port: int) -> None:
+# ---------------------------------------------------------------------------
+# local preview: serving, watching, live reload
+# ---------------------------------------------------------------------------
+
+# Rebuilt on change by --watch. Dot-folders (post virtualenvs, checkpoints) are skipped.
+WATCHED = ("posts", "templates", "assets", "static", "site.yml", "tags.yml",
+           "build.py", "activity.py", "og_image.py")
+
+# Injected into every HTML page by the preview server, never written to _site/:
+# polls the build number and reloads the page when a rebuild finishes.
+LIVE_RELOAD = b"""<script>(function () {
+  var seen = null;
+  setInterval(function () {
+    fetch("/__build", { cache: "no-store" }).then(function (r) { return r.text(); })
+      .then(function (id) { if (seen !== null && id !== seen) location.reload(); seen = id; })
+      .catch(function () {});
+  }, 800);
+})();</script>"""
+
+
+def make_server(out_dir: Path, port: int, build_id=None):
+    """A static server for out_dir that never lets the browser cache anything.
+
+    With ``build_id`` (a callable), it also answers /__build and injects the
+    live-reload script into HTML pages.
+    """
     import functools
     from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-    handler = functools.partial(SimpleHTTPRequestHandler, directory=str(out_dir))
+    class Handler(SimpleHTTPRequestHandler):
+        def end_headers(self):
+            # A stale app.js or style.css after a rebuild looks exactly like a bug.
+            self.send_header("Cache-Control", "no-store")
+            super().end_headers()
+
+        def log_message(self, *args):
+            pass
+
+        def send_bytes(self, body: bytes, content_type: str):
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def do_GET(self):
+            path = self.path.split("?", 1)[0].split("#", 1)[0]
+            if build_id is None:
+                return super().do_GET()
+            if path == "/__build":
+                return self.send_bytes(str(build_id()).encode(), "text/plain")
+            target = Path(self.translate_path(self.path))
+            if target.is_dir() and path.endswith("/"):
+                target = target / "index.html"
+            if target.suffix == ".html" and target.is_file():
+                page = target.read_bytes()
+                end = page.rfind(b"</body>")
+                page = page[:end] + LIVE_RELOAD + page[end:] if end != -1 else page + LIVE_RELOAD
+                return self.send_bytes(page, "text/html; charset=utf-8")
+            return super().do_GET()
+
+    handler = functools.partial(Handler, directory=str(out_dir))
+    return ThreadingHTTPServer(("127.0.0.1", port), handler)
+
+
+def serve(out_dir: Path, port: int) -> None:
     print(f"Serving {out_dir} at http://localhost:{port}/  (Ctrl+C to stop)")
     try:
-        ThreadingHTTPServer(("127.0.0.1", port), handler).serve_forever()
+        make_server(out_dir, port).serve_forever()
     except KeyboardInterrupt:
+        print("\nStopped.")
+
+
+def snapshot() -> dict[Path, int]:
+    """Modification time of every watched file."""
+    state: dict[Path, int] = {}
+    for name in WATCHED:
+        path = ROOT / name
+        if path.is_file():
+            state[path] = path.stat().st_mtime_ns
+        elif path.is_dir():
+            for folder, dirs, files in os.walk(path):
+                dirs[:] = [d for d in dirs if not d.startswith(".") and d not in IGNORED_DIRS]
+                for file in files:
+                    try:
+                        state[Path(folder) / file] = (Path(folder) / file).stat().st_mtime_ns
+                    except OSError:                 # deleted between listing and stat
+                        pass
+    return state
+
+
+def watch(out_dir: Path, port: int, build_args: list[str]) -> None:
+    """Serve out_dir, rebuild whenever a watched file changes, reload open pages.
+
+    Each rebuild runs build.py in a fresh process, so edits to the build code
+    itself apply at once, and a crashing build never takes the server down:
+    the last good output stays up until the next change.
+    """
+    import threading
+
+    state = {"build": 1}
+    server = make_server(out_dir, port, lambda: state["build"])
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    print(f"Serving {out_dir} at http://localhost:{port}/ and watching for changes "
+          "(Ctrl+C to stop)")
+
+    seen = snapshot()
+    try:
+        while True:
+            time.sleep(0.4)
+            now = snapshot()
+            if now == seen:
+                continue
+            while True:                              # let a burst of saves settle
+                time.sleep(0.3)
+                later = snapshot()
+                if later == now:
+                    break
+                now = later
+            changed = sorted(p for p in now.keys() | seen.keys() if now.get(p) != seen.get(p))
+            seen = now
+            names = ", ".join(p.relative_to(ROOT).as_posix() for p in changed[:3])
+            more = f" and {len(changed) - 3} more" if len(changed) > 3 else ""
+            print(f"\n~ {names}{more} changed")
+            result = subprocess.run([sys.executable, str(ROOT / "build.py"), *build_args])
+            if result.returncode == 0:
+                state["build"] += 1
+            else:
+                print("! build failed; still serving the previous output")
+    except KeyboardInterrupt:
+        server.shutdown()
         print("\nStopped.")
 
 
@@ -1223,6 +1346,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--drafts", action="store_true", help="include posts marked draft")
     parser.add_argument("--serve", nargs="?", const=8000, type=int, metavar="PORT",
                         help="serve the result locally after building")
+    parser.add_argument("--watch", action="store_true",
+                        help="with --serve (implied, port 8000): rebuild when posts, "
+                             "templates, assets, the .yml files or the build code "
+                             "change, and reload open pages")
     parser.add_argument("--no-cache", action="store_true",
                         help="re-render every post and preview image instead of "
                              "reusing .cache/render and .cache/og")
@@ -1241,7 +1368,14 @@ def main(argv: list[str] | None = None) -> int:
 
     build(out_dir, include_drafts=args.drafts, refresh=args.refresh,
           offline=args.offline, strict=args.strict, use_cache=not args.no_cache)
-    if args.serve:
+    if args.watch:
+        # Rebuilds repeat this build's options, except --refresh: re-cloning the
+        # project repos on every save would be slow and pointless.
+        rebuild = ["--out", str(out_dir)] + [flag for flag, on in (
+            ("--drafts", args.drafts), ("--offline", args.offline),
+            ("--strict", args.strict), ("--no-cache", args.no_cache)) if on]
+        watch(out_dir, args.serve or 8000, rebuild)
+    elif args.serve:
         serve(out_dir, args.serve)
     return 0
 

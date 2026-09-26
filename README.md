@@ -285,14 +285,23 @@ that matches no post is reported in the build log rather than failing.
 ```bash
 python -m venv .venv && .venv/Scripts/activate
 pip install -r requirements-dev.txt
-python build.py --serve
+python build.py --drafts --serve --watch
 ```
 
-Then open <http://localhost:8000>. Useful flags:
+Then open <http://localhost:8000>. With `--watch`, saving a post, a template,
+the CSS or JS, a `.yml` file or the build code rebuilds the site and reloads
+the open pages by themselves. Each rebuild runs in a fresh process, so edits
+to `build.py` apply at once, and a failing build leaves the previous output up.
+The reload script is added by the preview server only; it never reaches
+`_site/`. The preview server also disables browser caching, so a rebuilt
+`app.js` or `style.css` is never served stale.
+
+Useful flags:
 
 - `--drafts` — include posts marked `draft: true`
 - `--out DIR` — write somewhere other than `_site/`
 - `--serve PORT` — serve on a different port
+- `--watch` — rebuild on change and reload open pages (implies `--serve`)
 - `--refresh` — re-clone the project blogs instead of reusing `.cache/`
 - `--offline` — never touch the network; build from whatever is cached
 - `--strict` — fail on publishing problems in `posts/`, as CI does (see below)

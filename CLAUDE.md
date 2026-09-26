@@ -15,7 +15,7 @@ Personal research site. `README.md` is the full reference for how posts, metadat
 
 ## Environments
 
-- `.venv/` at the repo root holds the build dependencies and pytest (`requirements-dev.txt`) only. Build with `.venv/Scripts/python.exe build.py --drafts --offline`; preview with the `site` config in `.claude/launch.json` (port 8000).
+- `.venv/` at the repo root holds the build dependencies and pytest (`requirements-dev.txt`) only. Build with `.venv/Scripts/python.exe build.py --drafts --offline`; preview with the `site` config in `.claude/launch.json` (port 8000), which runs `build.py --watch`: it rebuilds on every change and reloads open pages, so no manual rebuild is needed while it runs.
 - Tests: `.venv/Scripts/python.exe -m pytest` (offline, ~15 s). Add or update tests in `tests/` with any change to the build logic; CI runs them before building.
 - Each notebook post is its own uv project, with its environment in its folder: `posts/<post-folder>/.venv/`. From the post folder:
 

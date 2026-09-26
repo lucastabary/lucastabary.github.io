@@ -161,16 +161,20 @@ main { min-height: 60vh; }
 .site-nav a.current { color: var(--text); background: var(--surface-2); }
 
 .theme-toggle {
-  margin-left: .35rem; width: 32px; height: 32px; display: grid; place-items: center;
-  background: none; border: 1px solid var(--border); border-radius: 8px;
-  color: var(--text-muted); cursor: pointer; padding: 0;
+  position: relative; margin-left: .35rem; width: 34px; height: 34px; display: grid; place-items: center;
+  background: none; border: 1px solid var(--border); border-radius: 9px;
+  color: var(--text-muted); cursor: pointer; padding: 0; overflow: hidden;
+  transition: color .15s, border-color .15s, background-color .15s;
 }
-.theme-toggle:hover { color: var(--text); border-color: var(--text-faint); }
-.theme-toggle-icon { width: 14px; height: 14px; border-radius: 50%; background: currentColor; box-shadow: inset -4px -4px 0 0 var(--bg); }
-:root[data-theme="dark"] .theme-toggle-icon { box-shadow: none; }
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+/* Both icons share the cell; the one not in use spins out of view. */
+.theme-toggle svg { grid-area: 1 / 1; transition: transform .35s cubic-bezier(.4, 1.4, .6, 1), opacity .2s; }
+.theme-toggle .icon-sun { opacity: 0; transform: rotate(-90deg) scale(.4); }
+:root[data-theme="dark"] .theme-toggle .icon-moon { opacity: 0; transform: rotate(90deg) scale(.4); }
+:root[data-theme="dark"] .theme-toggle .icon-sun { opacity: 1; transform: none; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .theme-toggle-icon { box-shadow: none; }
-  :root[data-theme="light"] .theme-toggle-icon { box-shadow: inset -4px -4px 0 0 var(--bg); }
+  :root:not([data-theme="light"]) .theme-toggle .icon-moon { opacity: 0; transform: rotate(90deg) scale(.4); }
+  :root:not([data-theme="light"]) .theme-toggle .icon-sun { opacity: 1; transform: none; }
 }
 
 .site-footer {

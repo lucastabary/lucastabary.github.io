@@ -14,11 +14,18 @@
 
   var toggle = document.querySelector("[data-theme-toggle]");
   if (toggle) {
+    // The label (and hover tooltip) names the theme a click switches to.
+    var label = function () {
+      var text = "Switch to " + (currentTheme() === "dark" ? "light" : "dark") + " theme";
+      toggle.setAttribute("aria-label", text);
+      toggle.setAttribute("title", text);
+    };
+    label();
     toggle.addEventListener("click", function () {
       var next = currentTheme() === "dark" ? "light" : "dark";
       root.setAttribute("data-theme", next);
       try { localStorage.setItem("theme", next); } catch (e) {}
-      toggle.setAttribute("aria-label", "Switch to " + (next === "dark" ? "light" : "dark") + " theme");
+      label();
     });
   }
 

@@ -1,0 +1,5 @@
+# Everything needed to work on the build itself: the build dependencies plus
+# the test runner. CI installs this file; the build alone only needs
+# requirements.txt.
+-r requirements.txt
+pytest>=8.0

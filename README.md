@@ -284,7 +284,7 @@ that matches no post is reported in the build log rather than failing.
 
 ```bash
 python -m venv .venv && .venv/Scripts/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python build.py --serve
 ```
 
@@ -307,6 +307,18 @@ instead of twenty; CI keeps the cache between runs with `actions/cache`.
 
 The first build clones the project repos; later builds reuse `.cache/`, so add
 `--refresh` when you want their newest posts locally.
+
+### Tests
+
+```bash
+python -m pytest
+```
+
+`tests/` covers the build's own logic: filename and metadata parsing, tag
+normalisation, folder posts and series, the activity charts, `--strict`, and a
+small end-to-end build from fixture posts. It runs offline in about fifteen
+seconds, never touches `.cache/`, and runs in CI before every build, so a
+failing test stops the deploy.
 
 `_site/` is generated and git-ignored; never edit it by hand. If this repo lives
 in a synced folder (OneDrive, Dropbox), excluding `_site/` from sync avoids the
@@ -337,6 +349,7 @@ Until that is done the site keeps serving the old branch contents.
 
 ```
 build.py                    the generator
+tests/                      tests of the build (pytest)
 activity.py                 commit activity of the project repos (GitHub API)
 og_image.py                 Open Graph preview images (Pillow)
 fonts/                      Inter and Source Serif 4 (OFL), used by og_image.py

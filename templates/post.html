@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import post_crumb, sequence_nav %}
+{% from "_macros.html" import post_crumb, sequence_nav, tag_pill %}
 
 {% block title %}{{ post.title }}{% endblock %}
 {% block description %}{{ post.summary }}{% endblock %}
@@ -22,7 +22,7 @@
       </div>
       {% if post.tags %}
       <p class="tag-row">
-        {% for tag in post.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+        {% for tag in post.tags %}{{ tag_pill(tag) }}{% endfor %}
       </p>
       {% endif %}
     </div>

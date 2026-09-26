@@ -48,6 +48,7 @@ POSTS_DIR = ROOT / "posts"
 TEMPLATES_DIR = ROOT / "templates"
 ASSETS_DIR = ROOT / "assets"
 STATIC_DIR = ROOT / "static"
+TAGS_FILE = ROOT / "tags.yml"
 CACHE_DIR = ROOT / ".cache" / "sources"
 ACTIVITY_CACHE_DIR = ROOT / ".cache" / "activity"
 RENDER_CACHE_DIR = ROOT / ".cache" / "render"   # rendered posts, by content hash
@@ -1022,6 +1023,35 @@ def make_og_image(out_dir: Path, page_url: str, override: str | None, config: di
     return page_url + OG_NAME
 
 
+def load_tag_registry() -> dict[str, dict]:
+    """tags.yml: each canonical tag, with an optional description and aliases."""
+    if not TAGS_FILE.is_file():
+        return {}
+    raw = yaml.safe_load(TAGS_FILE.read_text(encoding="utf-8")) or {}
+    return {str(name): info or {} for name, info in raw.items()}
+
+
+def normalise_tags(posts: list[Post], registry: dict[str, dict]) -> None:
+    """Rewrite each post's tags to one spelling per tag.
+
+    A tag matching a registry name or alias, ignoring case, takes the registry
+    spelling. Unregistered tags are kept, and only merged across case: the first
+    spelling met (newest post first) wins. Duplicates within a post collapse.
+    """
+    lookup: dict[str, str] = {}
+    for name, info in registry.items():
+        lookup[name.lower()] = name
+        for alias in info.get("aliases") or []:
+            lookup[str(alias).lower()] = name
+    for post in posts:
+        tags: list[str] = []
+        for tag in post.tags:
+            canonical = lookup.setdefault(tag.lower(), tag)
+            if canonical not in tags:
+                tags.append(canonical)
+        post.tags = tags
+
+
 def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
           offline: bool = False, strict: bool = False, use_cache: bool = True) -> list[Post]:
     config = yaml.safe_load((ROOT / "site.yml").read_text(encoding="utf-8")) or {}
@@ -1030,6 +1060,8 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
     started = time.perf_counter()
     cache.enabled = use_cache
     posts = collect_posts(config, include_drafts, refresh, offline)
+    tag_registry = load_tag_registry()
+    normalise_tags(posts, tag_registry)
     report_issues(posts, strict)
     series, folders = link_folder_pages(posts)
 
@@ -1071,7 +1103,15 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
         return act.get("recent", 0), act.get("last_date") or dt.date.min
     projects.sort(key=busyness, reverse=True)
 
-    tags = sorted({t for p in posts for t in p.tags}, key=str.lower)
+    # The blog's tag filter: every tag in use, with its post count and the
+    # description from tags.yml (shown as the chip's tooltip).
+    tag_counts: dict[str, int] = {}
+    for post in posts:
+        for tag in post.tags:
+            tag_counts[tag] = tag_counts.get(tag, 0) + 1
+    tags = [{"name": name, "key": name.lower(), "count": count,
+             "description": str(tag_registry.get(name, {}).get("description") or "").strip()}
+            for name, count in sorted(tag_counts.items(), key=lambda kv: kv[0].lower())]
     ctx = {
         "config": config,
         "author": config.get("author") or {},

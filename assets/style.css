@@ -391,6 +391,7 @@ main { min-height: 60vh; }
   font-family: var(--font-sans); font-size: .74rem; color: var(--text-muted);
   background: var(--surface-2); border-radius: 5px; padding: .12rem .45rem;
 }
+a.tag:hover { color: var(--accent); background: var(--accent-soft); text-decoration: none; }
 
 .empty { color: var(--text-muted); font-style: italic; }
 .empty code { font-style: normal; font-size: .85em; background: var(--surface-2); padding: .1rem .35rem; border-radius: 4px; }
@@ -423,6 +424,8 @@ main { min-height: 60vh; }
 .chip.is-active { background: var(--text); border-color: var(--text); color: var(--bg); }
 .chip[hidden] { display: none; }
 .chip-count { font-size: .7rem; opacity: .6; margin-left: .15rem; font-variant-numeric: tabular-nums; }
+/* A tag no post would match under the other filters: still clickable, just quiet. */
+.chip.is-empty:not(.is-active) { opacity: .45; }
 .filter-status { font-family: var(--font-sans); font-size: .8rem; color: var(--text-faint); margin: 0 0 .5rem; }
 .filter-status[hidden] { display: none; }
 

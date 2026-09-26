@@ -80,16 +80,34 @@
       history.replaceState(null, "", window.location.pathname + (query ? "?" + query : "") + window.location.hash);
     }
 
+    function cardTags(card) {
+      return card.dataset.tags ? card.dataset.tags.split("|") : [];
+    }
+
     function apply() {
       var query = (search && search.value || "").trim().toLowerCase();
       var visible = 0;
+      var tagCounts = Object.create(null);
 
       cards.forEach(function (card) {
         var haystack = ((card.textContent || "") + " " + (card.dataset.text || "")).toLowerCase();
-        var show = kinds.every(function (kind) { return matches(card, kind); })
-          && (!query || haystack.indexOf(query) !== -1);
+        var found = !query || haystack.indexOf(query) !== -1;
+        var show = found && kinds.every(function (kind) { return matches(card, kind); });
         card.hidden = !show;
         if (show) visible++;
+        // A tag's count is what picking it would show: every filter but the
+        // tag one applies, so the numbers answer "how many if I click this".
+        if (found && matches(card, "project") && matches(card, "folder")) {
+          cardTags(card).forEach(function (tag) { tagCounts[tag] = (tagCounts[tag] || 0) + 1; });
+        }
+      });
+
+      chips.tag.forEach(function (chip) {
+        var count = chip.querySelector("[data-tag-count]");
+        if (!count) return;
+        var n = tagCounts[chip.dataset.tag] || 0;
+        count.textContent = n;
+        chip.classList.toggle("is-empty", n === 0);
       });
 
       syncChips();
@@ -123,6 +141,18 @@
           syncUrl();
         });
       });
+    });
+
+    // Tags on the cards filter in place here instead of reloading the page.
+    list.addEventListener("click", function (event) {
+      var link = event.target.closest && event.target.closest("[data-tag-link]");
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+      var value = link.dataset.tagLink;
+      if (!chips.tag.some(function (c) { return c.dataset.tag === value; })) return;
+      event.preventDefault();
+      active.tag = value;
+      apply();
+      syncUrl();
     });
 
     // Restore filters from the URL (/blog/?project=nirs-spectroscopy).

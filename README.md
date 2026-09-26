@@ -106,7 +106,7 @@ own `<name>.meta.yml`.
 | `title` | page and index title |
 | `date` | `YYYY-MM-DD`, overrides the filename prefix |
 | `summary` | index blurb and meta description; otherwise auto-extracted |
-| `tags` | chips on the card, and the filter buttons on `/blog/` |
+| `tags` | links on the post and its card, and the filter buttons on `/blog/`; see [Tags](#tags) |
 | `slug` | the URL, if you do not want the one derived from the filename |
 | `draft` | `true` keeps the post out of the build |
 | `featured` | `true` pins the post to the home page |
@@ -114,6 +114,29 @@ own `<name>.meta.yml`.
 
 A file or folder whose name starts with `_` or `.` is ignored entirely — handy
 for parking something in `posts/` that is not a post at all.
+
+### Tags
+
+`tags.yml` is the tag vocabulary: one entry per tag, under its canonical
+spelling, with a `description` and optional `aliases`.
+
+```yaml
+ML:
+  description: Machine learning in general.
+  aliases: [machine-learning]
+```
+
+The build matches every post's tags against those names and aliases ignoring
+case, so `ml` and `machine-learning` are published as `ML`, including in posts
+pulled from project repos. A tag missing from the file is published as written
+(variants that differ only in case still merge), so a post never depends on it;
+registering a tag adds its description, shown as the tooltip of its filter
+chip, and its aliases. The `create-blogpost` skill picks tags from this file
+and only adds new ones when nothing fits.
+
+Tags on a post or card link to `/blog/?tag=...`. On `/blog/` itself they filter
+in place, and each tag chip shows how many posts it would match under the
+other active filters (project, folder, search); a chip matching none is dimmed.
 
 ### Notebook cell tags
 
@@ -318,6 +341,7 @@ activity.py                 commit activity of the project repos (GitHub API)
 og_image.py                 Open Graph preview images (Pillow)
 fonts/                      Inter and Source Serif 4 (OFL), used by og_image.py
 site.yml                    profile, interests, projects and their blog sources
+tags.yml                    tag vocabulary: descriptions and aliases
 posts/                      drop posts here
 templates/                  Jinja2 page templates
 assets/                     style.css, app.js (copied to /assets/)

@@ -54,8 +54,9 @@
         <span class="filter-label">Tag</span>
         <div class="chip-row" role="group" aria-label="Filter by tag">
           <button type="button" class="chip is-active" data-tag="">All</button>
+          {# The count is the build-time total; app.js keeps it in step with the other filters. #}
           {% for tag in tags %}
-          <button type="button" class="chip" data-tag="{{ tag | lower }}">{{ tag }}</button>
+          <button type="button" class="chip" data-tag="{{ tag.key }}"{% if tag.description %} title="{{ tag.description }}"{% endif %}>{{ tag.name }} <span class="chip-count" data-tag-count>{{ tag.count }}</span></button>
           {% endfor %}
         </div>
       </div>

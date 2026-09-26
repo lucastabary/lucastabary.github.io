@@ -1,3 +1,6 @@
+{# A tag links to the blog filtered on it; on /blog/ itself, app.js filters in place. #}
+{% macro tag_pill(tag) %}<a class="tag" href="/blog/?tag={{ tag | lower | urlencode }}" data-tag-link="{{ tag | lower }}">{{ tag }}</a>{% endmacro %}
+
 {% macro post_card(post, show_project=True) %}
 <article class="post-card"
          data-tags="{{ post.tags | join('|') | lower }}"
@@ -17,7 +20,7 @@
       {% if post.folder and post.folder.url != post.url %}
       <a class="folder-chip" href="{{ post.folder.url }}">{{ post.folder.title }}</a>
       {% endif %}
-      {% for tag in post.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+      {% for tag in post.tags %}{{ tag_pill(tag) }}{% endfor %}
     </div>
   </div>
 </article>

@@ -11,6 +11,7 @@ Personal research site. `README.md` is the full reference for how posts, metadat
 - Every new post is a folder: `posts/YYYY-MM-DD-slug/`, with the main post as `index.<ext>`.
 - Every `.ipynb`, `.md`, `.html` and `.pdf` at the top of a post folder is published as its own post (`index.*` at `/blog/slug/`, the others at `/blog/slug/<name>/`). So never leave drafts, notes or LaTeX-generated Markdown there: prefix scratch files with `_` or put them in a `_`-prefixed subfolder. `README.md` is ignored.
 - Notebooks are rendered, not executed: commit them with their outputs.
+- Tags come from `tags.yml` (canonical spelling, description, aliases). Reuse an existing tag before creating one, and register any new tag there.
 
 ## Environments
 

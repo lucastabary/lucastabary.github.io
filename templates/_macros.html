@@ -42,7 +42,7 @@
   {% if project.context %}<p class="project-meta">{{ project.context }}</p>{% endif %}
   <h3><a href="{{ project.url }}">{{ project.name }}</a></h3>
   <p class="project-text">{{ project.text }}</p>
-  {% if project.activity %}{{ activity_graph(project.activity, weeks=26, labels=False) }}{% endif %}
+  {% if project.activity %}{{ activity_card(project.activity, (config.project_cards or {}).activity or 'heatmap') }}{% endif %}
   <p class="project-foot">
     {% if project.posts %}
     <a href="{{ project.url }}">{{ project.posts | length }} post{{ '' if project.posts | length == 1 else 's' }} &rarr;</a>
@@ -81,7 +81,7 @@
     {% endfor %}
   </svg>
   <figcaption>
-    <span>{{ total }} commit{{ '' if total == 1 else 's' }} in the last {{ 'year' if columns | length >= 52 else (columns | length) ~ ' weeks' }}{% if labels and activity.last %} &middot; last on {{ activity.last }}{% endif %}</span>
+    <span>{{ total }} commit{{ '' if total == 1 else 's' }} in the last {{ 'year' if columns | length >= 52 else (columns | length) ~ ' weeks' }}{% if activity.recent %} &middot; {{ activity.recent }} this month{% endif %}{% if labels and activity.last %} &middot; last on {{ activity.last }}{% endif %}</span>
     {% if labels %}
     <span class="activity-legend" aria-hidden="true">Less {% for level in range(5) %}<i class="lvl-{{ level }}"></i>{% endfor %} More</span>
     {% endif %}
@@ -112,5 +112,35 @@
     {% endif %}
   </div>
 </nav>
+{% endif %}
+{% endmacro %}
+
+{# Compact activity on a project card, in one of the styles of `project_cards.activity`:
+   heatmap (26 weeks), heatmap-year, sparkline or bars (weekly commits over a year). #}
+{% macro activity_card(activity, style='heatmap') %}
+{% if style == 'heatmap' %}{{ activity_graph(activity, weeks=26, labels=False) }}
+{% elif style == 'heatmap-year' %}{{ activity_graph(activity, weeks=53, labels=False) }}
+{% else %}
+{% set totals = activity.weeks | map(attribute='total') | list %}
+{% set peak = [totals | max, 1] | max %}
+{% set n, w, h = totals | length, 4, 34 %}
+<figure class="activity activity-compact activity-{{ style }}">
+  <svg viewBox="0 0 {{ n * w }} {{ h }}" preserveAspectRatio="none" role="img"
+       aria-label="Weekly commits over the last year, peak {{ peak }} in a week">
+    <line class="activity-baseline" x1="0" y1="{{ h - 0.5 }}" x2="{{ n * w }}" y2="{{ h - 0.5 }}"/>
+    {% if style == 'bars' %}
+    {% for t in totals %}
+    {% set bh = (t / peak * (h - 2)) | round(1) %}
+    {% if t %}<rect class="activity-bar" x="{{ loop.index0 * w + 0.5 }}" y="{{ h - bh }}" width="{{ w - 1 }}" height="{{ bh }}" rx=".6"><title>{{ t }} commit{{ '' if t == 1 else 's' }}, week of {{ activity.weeks[loop.index0].days[0].label }}</title></rect>{% endif %}
+    {% endfor %}
+    {% else %}
+    {% set points = [] %}
+    {% for t in totals %}{% set _ = points.append(((loop.index0 + 0.5) * w) ~ ',' ~ ((h - 2 - t / peak * (h - 6)) | round(1))) %}{% endfor %}
+    <polygon class="activity-area" points="{{ w * 0.5 }},{{ h }} {{ points | join(' ') }} {{ (n - 0.5) * w }},{{ h }}"/>
+    <polyline class="activity-line" points="{{ points | join(' ') }}"/>
+    {% endif %}
+  </svg>
+  <figcaption><span>{{ activity.total }} commit{{ '' if activity.total == 1 else 's' }} in the last year{% if activity.recent %} &middot; {{ activity.recent }} this month{% endif %}</span></figcaption>
+</figure>
 {% endif %}
 {% endmacro %}

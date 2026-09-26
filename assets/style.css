@@ -281,6 +281,12 @@ main { min-height: 60vh; }
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: .3rem 1rem; margin-top: .55rem;
   font-family: var(--font-sans); font-size: .76rem; color: var(--text-faint);
 }
+.activity-sparkline svg, .activity-bars svg { height: 2.4rem; max-width: none; }
+.activity-baseline { stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.activity-line { fill: none; stroke: var(--activity); stroke-width: 1.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.activity-area { fill: color-mix(in srgb, var(--activity) 14%, transparent); }
+.activity-bar { fill: var(--activity); }
+.activity-bar:hover { fill: var(--text); }
 .activity-legend { display: inline-flex; align-items: center; gap: 3px; }
 .activity-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
 .activity-legend i:first-child { margin-left: .3rem; }

@@ -193,9 +193,13 @@ All three come from `site.yml`. Do not edit the generated HTML.
   the latest posts, and the projects marked `featured: true`.
 - **About** (`/about/`) holds the presentation: `role` above the heading, `bio`
   as the lede, the `about:` narrative in Markdown, and the `interests` as cards.
-- **Projects** (`/projects/`) lists the projects of `site.yml`, in file order.
-  The list is written by hand; what fills in automatically is each project's
-  posts, pulled from its repo.
+- **Projects** (`/projects/`) lists the projects of `site.yml`. The list is
+  written by hand; what fills in automatically is each project's posts, pulled
+  from its repo, and its activity.
+
+Wherever projects appear (projects page, home page, blog filter), they are
+ordered busiest first: commits over the last 30 days, then the date of the
+latest commit, then their order in `site.yml`.
 
 ### Project activity
 

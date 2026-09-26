@@ -20,6 +20,7 @@ import urllib.request
 from pathlib import Path
 
 WEEKS = 53                         # a full year, like GitHub's contribution graph
+RECENT_DAYS = 30                   # the rolling month that orders the projects
 MAX_PAGES = 10                     # 1000 commits a year is more than enough
 FRESH_FOR = dt.timedelta(hours=6)  # reuse a cached fetch this recent
 
@@ -138,7 +139,10 @@ def grid(dates: list[dt.date], today: dt.date, weeks: int = WEEKS) -> dict:
 
     total = sum(in_range)
     last = max((d for d in dates if d <= today), default=None)
+    month_start = today - dt.timedelta(days=RECENT_DAYS - 1)
     return {
+        "recent": sum(1 for d in dates if month_start <= d <= today),
+        "last_date": last,
         "weeks": columns,
         "months": months,
         "total": total,

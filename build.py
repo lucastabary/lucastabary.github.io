@@ -1063,6 +1063,13 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
             "activity": activity.grid(commits, today) if commits is not None else None,
         })
 
+    # Every page lists projects busiest first: commits over the rolling month, then
+    # the most recent commit; site.yml order breaks the remaining ties (sort is stable).
+    def busyness(project: dict) -> tuple[int, dt.date]:
+        act = project["activity"] or {}
+        return act.get("recent", 0), act.get("last_date") or dt.date.min
+    projects.sort(key=busyness, reverse=True)
+
     tags = sorted({t for p in posts for t in p.tags}, key=str.lower)
     ctx = {
         "config": config,

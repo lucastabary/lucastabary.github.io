@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import post_card, project_item %}
+{% from "_macros.html" import post_card, project_item with context %}
 
 {% block title %}{{ (config.pages or {}).home or site_title }}{% endblock %}
 

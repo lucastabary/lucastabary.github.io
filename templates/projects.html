@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import project_item %}
+{% from "_macros.html" import project_item with context %}
 
 {% block title %}{{ (config.pages or {}).projects or 'Projects' }}{% endblock %}
 {% block description %}Research projects and personal work by {{ author.name }}.{% endblock %}

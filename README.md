@@ -203,13 +203,19 @@ latest commit, then their order in `site.yml`.
 
 ### Project activity
 
-Each project with a `repo` shows its commit activity as a GitHub-style heatmap:
-the past 26 weeks on its card, the whole year with month labels on its page.
-Squares are coloured by quartile of the busy days, so a single large commit day
-does not flatten the rest.
+Each project with a `repo` shows its commit activity. Its page has a bar chart
+of commits per week over the project's whole life, from the first commit to
+today, stretched to the full width whatever the span; the axis is labelled by
+month, or by year once the project is older than about a year and a half.
 
-The build reads the commits from the GitHub API (the local clones are shallow)
-and caches their dates in `.cache/activity/` for six hours; `--refresh` fetches
+Its card shows a compact view of the recent past instead.
+`project_cards.activity` in `site.yml` picks the card style: `heatmap` (last 26
+weeks), `heatmap-year`, `sparkline` or `bars` (weekly commits over the year).
+Heatmap squares are coloured by quartile of the busy days, so a single large
+commit day does not flatten the rest.
+
+The build reads the full commit history from the GitHub API (the local clones
+are shallow) and caches the dates in `.cache/activity/` for six hours; `--refresh` fetches
 again, `--offline` uses the cache. In CI the workflow passes `GITHUB_TOKEN` to
 lift the anonymous rate limit. A failed fetch only prints a warning, and the
 project shows no heatmap. `activity: false` on a project hides it.
@@ -308,7 +314,7 @@ Until that is done the site keeps serving the old branch contents.
 
 ```
 build.py                    the generator
-activity.py                 commit heatmaps of the project repos (GitHub API)
+activity.py                 commit activity of the project repos (GitHub API)
 og_image.py                 Open Graph preview images (Pillow)
 fonts/                      Inter and Source Serif 4 (OFL), used by og_image.py
 site.yml                    profile, interests, projects and their blog sources

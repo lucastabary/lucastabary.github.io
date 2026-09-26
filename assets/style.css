@@ -287,6 +287,13 @@ main { min-height: 60vh; }
 .activity-area { fill: color-mix(in srgb, var(--activity) 14%, transparent); }
 .activity-bar { fill: var(--activity); }
 .activity-bar:hover { fill: var(--text); }
+/* Project page: weekly bars from the first commit to today, stretched to the width. */
+.activity-lifetime svg { height: 5.5rem; }
+.activity-axis {
+  position: relative; height: 1.1rem; margin-top: .3rem;
+  font-family: var(--font-sans); font-size: .7rem; color: var(--text-faint);
+}
+.activity-axis span { position: absolute; top: 0; white-space: nowrap; padding-left: .25rem; border-left: 1px solid var(--border); line-height: 1.1rem; }
 .activity-legend { display: inline-flex; align-items: center; gap: 3px; }
 .activity-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
 .activity-legend i:first-child { margin-left: .3rem; }

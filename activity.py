@@ -1,8 +1,10 @@
 """Commit activity of project repositories, for the GitHub-style heatmaps.
 
-The build asks the GitHub REST API for the commits of the past year on each
-project's default branch, caches their dates in ``.cache/activity/``, and turns
-them into a grid of weeks x weekdays with an intensity level per day.
+The build asks the GitHub REST API for every commit on each project's default
+branch, caches their dates in ``.cache/activity/``, and turns them into two
+views: a grid of weeks x weekdays over the past year (the heatmap on project
+cards), and weekly totals over the project's whole life, from its first commit
+to today (the bar chart on project pages).
 
 The API is used rather than the local clones because those are shallow (one
 commit deep) on purpose. Anonymous calls are limited to 60 an hour, plenty for a
@@ -21,7 +23,7 @@ from pathlib import Path
 
 WEEKS = 53                         # a full year, like GitHub's contribution graph
 RECENT_DAYS = 30                   # the rolling month that orders the projects
-MAX_PAGES = 10                     # 1000 commits a year is more than enough
+MAX_PAGES = 50                     # 5000 commits: far beyond any of these projects
 FRESH_FOR = dt.timedelta(hours=6)  # reuse a cached fetch this recent
 
 
@@ -42,12 +44,11 @@ def _get(url: str) -> list:
         return json.load(resp)
 
 
-def _fetch(repo: str, since: dt.date) -> list[str]:
-    """ISO author dates of every commit on the default branch since ``since``."""
+def _fetch(repo: str) -> list[str]:
+    """ISO author dates of every commit on the default branch."""
     stamps: list[str] = []
     for page in range(1, MAX_PAGES + 1):
-        batch = _get(f"https://api.github.com/repos/{repo}/commits"
-                     f"?since={since.isoformat()}T00:00:00Z&per_page=100&page={page}")
+        batch = _get(f"https://api.github.com/repos/{repo}/commits?per_page=100&page={page}")
         stamps += [c["commit"]["author"]["date"] for c in batch
                    if c.get("commit", {}).get("author", {}).get("date")]
         if len(batch) < 100:
@@ -57,7 +58,7 @@ def _fetch(repo: str, since: dt.date) -> list[str]:
 
 def commit_dates(repo: str, cache_dir: Path, refresh: bool, offline: bool,
                  today: dt.date) -> list[dt.date] | None:
-    """Commit dates of the past year, from the cache when it is recent enough."""
+    """Every commit date of the repo, from the cache when it is recent enough."""
     cache = cache_dir / f"{repo.replace('/', '__')}.json"
     cached = None
     if cache.is_file():
@@ -71,21 +72,24 @@ def commit_dates(repo: str, cache_dir: Path, refresh: bool, offline: bool,
 
     if cached:
         age = dt.datetime.now(dt.timezone.utc) - dt.datetime.fromisoformat(cached["fetched_at"])
-        if offline or (age < FRESH_FOR and not refresh):
+        # Caches written before the full history was fetched only hold one year.
+        complete = cached.get("history") == "full"
+        if offline or (complete and age < FRESH_FOR and not refresh):
             return dates(cached)
     if offline:
         _log(f"! no cached activity for {repo} and --offline is set — no heatmap")
         return None
 
     try:
-        stamps = _fetch(repo, today - dt.timedelta(weeks=WEEKS))
+        stamps = _fetch(repo)
     except (urllib.error.URLError, OSError, ValueError, KeyError) as exc:
         reason = getattr(exc, "code", None) or exc.__class__.__name__
         _log(f"! could not fetch the activity of {repo} ({reason})"
              + (" — using the cached one" if cached else " — no heatmap"))
         return dates(cached) if cached else None
 
-    data = {"fetched_at": dt.datetime.now(dt.timezone.utc).isoformat(), "commits": stamps}
+    data = {"fetched_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "history": "full", "commits": stamps}
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(data), encoding="utf-8")
     return dates(data)
@@ -148,4 +152,50 @@ def grid(dates: list[dt.date], today: dt.date, weeks: int = WEEKS) -> dict:
         "total": total,
         "active_days": sum(1 for c in in_range if c),
         "last": last.strftime("%d %B %Y").lstrip("0") if last else None,
+    }
+
+
+def lifetime(dates: list[dt.date], today: dt.date) -> dict | None:
+    """Commits per week from the week of the first commit to the current one.
+
+    ``ticks`` place the axis labels as fractions of the width: one per month for
+    a project younger than about a year and a half, one per year beyond that.
+    """
+    past = sorted(d for d in dates if d <= today)
+    if not past:
+        return None
+    first = past[0]
+    start = first - dt.timedelta(days=first.weekday())
+    n = (today - start).days // 7 + 1
+
+    totals = [0] * n
+    for d in past:
+        totals[(d - start).days // 7] += 1
+    weeks = [{"total": t, "label": (start + dt.timedelta(weeks=i)).strftime("%d %b %Y").lstrip("0")}
+             for i, t in enumerate(totals)]
+
+    yearly = n > 78
+    ticks = []
+    for i in range(n):
+        week = [start + dt.timedelta(weeks=i, days=k) for k in range(7)]
+        mark = next((d for d in week if d.day == 1 and (d.month == 1 or not yearly)), None)
+        if not mark:
+            continue
+        pos = i / n
+        # Skip a label that would run into the previous one; the room a label
+        # needs grows with its length, sized for a phone-width chart.
+        if ticks and pos - ticks[-1]["pos"] < 0.03 + 0.018 * len(ticks[-1]["label"]):
+            continue
+        label = str(mark.year) if yearly else mark.strftime("%b")
+        if not yearly and (mark.month == 1 or not ticks):
+            label = mark.strftime("%b %Y")
+        ticks.append({"pos": round(pos, 4), "label": label})
+
+    return {
+        "weeks": weeks,
+        "ticks": ticks,
+        "peak": max(totals),
+        "total": len(past),
+        "first": first.strftime("%d %B %Y").lstrip("0"),
+        "span_weeks": n,
     }

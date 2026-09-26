@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import post_card, activity_graph %}
+{% from "_macros.html" import post_card, activity_lifetime %}
 
 {% block title %}{{ project.name }}{% endblock %}
 {% block description %}{{ project.text }}{% endblock %}
@@ -21,13 +21,13 @@
   </div>
 </section>
 
-{% if project.activity %}
+{% if project.lifetime %}
 <section class="band">
   <div class="wrap">
     <h2 class="section-title">Activity
       {% if project.repo_url %}<a class="section-more" href="{{ project.repo_url }}/commits">Commit history &rarr;</a>{% endif %}
     </h2>
-    {{ activity_graph(project.activity) }}
+    {{ activity_lifetime(project.lifetime, project.activity) }}
   </div>
 </section>
 {% endif %}

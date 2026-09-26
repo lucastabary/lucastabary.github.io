@@ -142,6 +142,12 @@ blog:
     Notes, experiments and half-formed ideas. Notebooks and papers land here as
     soon as they are worth reading.
 
+# Activity shown on project cards: heatmap (last 26 weeks), heatmap-year,
+# sparkline or bars (weekly commits over the past year). Project pages always
+# show weekly commits over the project's whole life, first commit to today.
+project_cards:
+  activity: heatmap
+
 # Preview images (Open Graph) for the fixed pages. Every page gets a generated
 # 1200x630 PNG; name an image here to use it instead. Put the file in static/
 # (static/images/og-home.png is served at /images/og-home.png) or give a URL.

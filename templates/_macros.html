@@ -89,6 +89,32 @@
 </figure>
 {% endmacro %}
 
+{# Commits per week over the project's whole life, first commit to today. The bars
+   stretch to the full width whatever the span; the axis labels are HTML placed in
+   percent, so the stretched SVG never distorts them. #}
+{% macro activity_lifetime(life, activity=None) %}
+{% set n, w, h = life.weeks | length, 10, 60 %}
+<figure class="activity activity-lifetime">
+  <svg viewBox="0 0 {{ n * w }} {{ h }}" preserveAspectRatio="none" role="img"
+       aria-label="{{ life.total }} commits over {{ n }} weeks since {{ life.first }}, peak {{ life.peak }} in a week">
+    <line class="activity-baseline" x1="0" y1="{{ h - 0.5 }}" x2="{{ n * w }}" y2="{{ h - 0.5 }}"/>
+    {% for week in life.weeks %}
+    {% if week.total %}
+    {% set bh = [(week.total / life.peak * (h - 2)) | round(1), 1.5] | max %}
+    <rect class="activity-bar" x="{{ loop.index0 * w + 1 }}" y="{{ h - bh }}" width="{{ w - 2 }}" height="{{ bh }}"><title>{{ week.total }} commit{{ '' if week.total == 1 else 's' }}, week of {{ week.label }}</title></rect>
+    {% endif %}
+    {% endfor %}
+  </svg>
+  <div class="activity-axis" aria-hidden="true">
+    {% for tick in life.ticks %}<span style="left: {{ (tick.pos * 100) | round(2) }}%">{{ tick.label }}</span>{% endfor %}
+  </div>
+  <figcaption>
+    <span>{{ life.total }} commit{{ '' if life.total == 1 else 's' }} since the first one on {{ life.first }}{% if activity and activity.recent %} &middot; {{ activity.recent }} this month{% endif %}{% if activity and activity.last %} &middot; last on {{ activity.last }}{% endif %}</span>
+    <span class="dim">peak {{ life.peak }} in a week</span>
+  </figcaption>
+</figure>
+{% endmacro %}
+
 {# Previous / next links between the posts of one folder, in reading order. #}
 {% macro sequence_nav(post) %}
 {% if post.sequence %}

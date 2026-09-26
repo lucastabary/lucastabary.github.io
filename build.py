@@ -1061,6 +1061,7 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
             **entry, **ref,
             "posts": [p for p in posts if p.project and p.project["slug"] == ref["slug"]],
             "activity": activity.grid(commits, today) if commits is not None else None,
+            "lifetime": activity.lifetime(commits, today) if commits is not None else None,
         })
 
     # Every page lists projects busiest first: commits over the rolling month, then

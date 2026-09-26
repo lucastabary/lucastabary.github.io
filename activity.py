@@ -176,6 +176,7 @@ def lifetime(dates: list[dt.date], today: dt.date) -> dict | None:
 
     yearly = n > 78
     ticks = []
+    labelled_year = None
     for i in range(n):
         week = [start + dt.timedelta(weeks=i, days=k) for k in range(7)]
         mark = next((d for d in week if d.day == 1 and (d.month == 1 or not yearly)), None)
@@ -187,8 +188,11 @@ def lifetime(dates: list[dt.date], today: dt.date) -> dict | None:
         if ticks and pos - ticks[-1]["pos"] < 0.03 + 0.018 * len(ticks[-1]["label"]):
             continue
         label = str(mark.year) if yearly else mark.strftime("%b")
-        if not yearly and (mark.month == 1 or not ticks):
+        # The first label of each year carries it, even when January itself
+        # was skipped for lack of room: "Dec 2025, Feb 2026, Mar".
+        if not yearly and mark.year != labelled_year:
             label = mark.strftime("%b %Y")
+        labelled_year = mark.year
         ticks.append({"pos": round(pos, 4), "label": label})
 
     return {

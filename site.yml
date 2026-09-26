@@ -6,14 +6,14 @@
 title: Lucas Tabary
 url: https://lucastabary.github.io
 description: >-
-  Research notes on machine learning, computational neuroscience and spectral
-  graph theory, by an engineering student in AI and statistics.
+  Research notes on machine learning, computational neuroscience and
+  interpretability, by an engineering student in AI and statistics.
 lang: en
 
 # Browser-tab titles. Each should say what the page is about; the author's name
 # is appended after it (" · Lucas Tabary"), never put first.
 pages:
-  home: Research notes on machine learning, neuroscience and graphs
+  home: Research notes on machine learning, neuroscience and interpretability
   blog: "Blog: notes, notebooks and experiments"
   projects: "Projects: research and personal work"
   about: "About: background and research interests"
@@ -21,15 +21,15 @@ pages:
 author:
   name: Lucas Tabary
   # Small line above the name on the About page.
-  role: Telecom Nancy (IAMD) · Master ISMD, Université de Lorraine
+  role: Telecom Nancy (IAMD) · Master IMSD, Université de Lorraine
   # One line under your name on the home page.
   intro: >-
     Engineering student working on machine learning, computational
-    neuroscience and spectral graph theory.
+    neuroscience and interpretability.
   # One or two sentences: the About page lede and its meta description.
   bio: >-
-    I study how learning systems represent structure — in artificial networks,
-    in biological ones, and in the graphs that connect them.
+    I study how learning systems represent structure — in artificial networks
+    and in biological ones — and how to read it back from their internal states.
   email: lucas.tabary01@gmail.com
   links:
     - label: Email
@@ -46,16 +46,18 @@ author:
 # The About page narrative, in Markdown, first person. Shown under the bio.
 about: |
   I am an engineering student at Telecom Nancy, in the IAMD track (artificial
-  intelligence and big data), and I am following the ISMD Master's in
-  statistics and machine learning at Université de Lorraine in parallel. The
+  intelligence and big data), and I am following the IMSD Master's
+  (mathematical engineering for data science) at Université de Lorraine in
+  parallel. The
   combination is deliberate: engineering taught me to build models, statistics
   taught me to distrust them until the evidence is in.
 
   What draws me to research is a question that keeps coming back in different
   forms: *what does a network actually learn about the structure of its data?*
   I approach it from three sides: the representations of deep networks, the
-  dynamics of biological circuits, and the spectral geometry of graphs, which
-  offers a common language for both.
+  dynamics of biological circuits, and interpretability, which turns the
+  question into a method: read a model's internal states to find out what it
+  computes.
 
   This site is where I think out loud. Most posts are notebooks written next to
   the code they describe, published as soon as they are worth reading rather
@@ -74,11 +76,12 @@ interests:
       Recurrent and spiking networks as models of cognitive processes, and the
       reverse question: which ideas from biological circuits make artificial
       architectures learn better.
-  - name: Spectral graph theory
+  - name: Interpretability
     text: >-
-      The Laplacian and adjacency spectra as a lens on graph structure, and
-      their use in geometric deep learning: spectral convolutions, positional
-      encodings and the optimisation of graph neural networks.
+      Understanding what a trained model actually does by looking inside it:
+      what its internal states encode, which features and mechanisms drive a
+      prediction, and what that access makes possible, from detecting failures
+      to steering or correcting the model.
 
 # Add a project by appending an entry here. Each one gets its own page at
 # /projects/<slug>/.
@@ -93,6 +96,23 @@ interests:
 #   image:           preview image when the project page is shared, instead of
 #                    the generated one (a /rooted path or a full URL)
 projects:
+  - name: "kAIsparov: teaching chess to graph neural networks"
+    slug: kaisparov
+    short: kAIsparov
+    context: Personal research project
+    featured: true
+    repo: lucastabary/kAIsparov
+    blog: blog
+    text: >-
+      A research platform that represents the chess board as a graph (squares
+      as nodes, piece movements as typed edges) to compare GNN architectures and
+      training methods on identical footing, starting with a relational GCN
+      trained by PPO self-play. The deeper goal is interpretability: what a GNN
+      learns about chess, and how information flows along piece relations.
+    links:
+      - label: Code
+        url: https://github.com/lucastabary/kAIsparov
+
   - name: Symbolic music generation with recurrent neural networks
     slug: music-generation-rnn
     short: Music generation
@@ -122,19 +142,6 @@ projects:
     links:
       - label: Code
         url: https://github.com/lucastabary/PIDR_RICOCHET
-
-  - name: EarTrainer
-    slug: eartrainer
-    short: EarTrainer
-    context: Personal project
-    featured: false
-    repo: lucastabary/EarTrainer
-    blog: blog
-    text: >-
-      A small web tool for practising interval and chord recognition by ear.
-    links:
-      - label: Code
-        url: https://github.com/lucastabary/EarTrainer
 
 blog:
   # Text shown at the top of the blog index.

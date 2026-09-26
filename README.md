@@ -263,6 +263,14 @@ Then open <http://localhost:8000>. Useful flags:
 - `--refresh` — re-clone the project blogs instead of reusing `.cache/`
 - `--offline` — never touch the network; build from whatever is cached
 - `--strict` — fail on publishing problems in `posts/`, as CI does (see below)
+- `--no-cache` — re-render everything instead of reusing the build cache
+
+The slow steps (rendering notebooks, drawing preview images, the About page
+Markdown) are cached in `.cache/render/` and `.cache/og/`, keyed by a hash of
+their input and of the code that produces them, so an entry is never stale:
+editing a post, `build.py`, `og_image.py` or `requirements.txt` just misses.
+Entries a build no longer uses are pruned. A warm rebuild takes about a second
+instead of twenty; CI keeps the cache between runs with `actions/cache`.
 
 The first build clones the project repos; later builds reuse `.cache/`, so add
 `--refresh` when you want their newest posts locally.
@@ -304,7 +312,7 @@ posts/                      drop posts here
 templates/                  Jinja2 page templates
 assets/                     style.css, app.js (copied to /assets/)
 static/                     optional: files copied to the site root as-is
-.cache/                     project blog clones and activity (git-ignored)
+.cache/                     project clones, activity, build cache (git-ignored)
 .github/workflows/pages.yml build and deploy
 ```
 

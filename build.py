@@ -21,7 +21,10 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import html as html_lib
+import json
+import pickle
 import re
 import shutil
 import stat
@@ -30,11 +33,12 @@ import sys
 import time
 import unicodedata
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 import yaml
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import Environment, FileSystemBytecodeCache, FileSystemLoader, select_autoescape
 
 import activity
 import og_image
@@ -46,6 +50,9 @@ ASSETS_DIR = ROOT / "assets"
 STATIC_DIR = ROOT / "static"
 CACHE_DIR = ROOT / ".cache" / "sources"
 ACTIVITY_CACHE_DIR = ROOT / ".cache" / "activity"
+RENDER_CACHE_DIR = ROOT / ".cache" / "render"   # rendered posts, by content hash
+OG_CACHE_DIR = ROOT / ".cache" / "og"           # preview images, by content hash
+JINJA_CACHE_DIR = ROOT / ".cache" / "jinja"     # compiled templates
 OG_NAME = "og-image.png"           # generated preview image, next to each page
 
 POST_EXTS = {".ipynb", ".md", ".markdown", ".html", ".htm", ".pdf"}
@@ -558,9 +565,101 @@ RENDERERS = {
 }
 
 
+# ---------------------------------------------------------------------------
+# build cache
+# ---------------------------------------------------------------------------
+
+class BuildCache:
+    """Content-addressed cache for the two slow steps: rendering and preview images.
+
+    An entry's key hashes everything its output depends on (the source file,
+    or the image's text) plus the code that produces it, so an entry is never
+    stale: editing a post, build.py, og_image.py or requirements.txt simply
+    misses. Entries this build did not use are pruned at the end.
+    """
+
+    def __init__(self, enabled: bool = True):
+        self.enabled = enabled
+        self.used: set[Path] = set()
+        self.hits = self.misses = 0
+
+    @staticmethod
+    def key(*parts: bytes | str) -> str:
+        digest = hashlib.sha256()
+        for part in parts:
+            digest.update(part if isinstance(part, bytes) else part.encode("utf-8"))
+            digest.update(b"\0")
+        return digest.hexdigest()[:32]
+
+    def _hit(self, path: Path) -> bool:
+        self.used.add(path)
+        found = self.enabled and path.is_file()
+        self.hits += found
+        self.misses += not found
+        return found
+
+    def render(self, source: Path) -> dict:
+        renderer = RENDERERS[source.suffix.lower()]
+        path = RENDER_CACHE_DIR / f"{self.key(source.read_bytes(), source.suffix.lower(), code_version('build.py', 'requirements.txt'))}.pickle"
+        if self._hit(path):
+            try:
+                return pickle.loads(path.read_bytes())
+            except (OSError, pickle.PickleError, EOFError, AttributeError):
+                pass
+        rendered = renderer(source)
+        if self.enabled:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(pickle.dumps(rendered))
+        return rendered
+
+    def markdown(self, text: str) -> str:
+        """Markdown from site.yml (the About page): cached, since loading the
+        Markdown extensions alone costs more than a second."""
+        path = RENDER_CACHE_DIR / f"{self.key(text, 'md', code_version('build.py', 'requirements.txt'))}.html"
+        if self._hit(path):
+            return path.read_text(encoding="utf-8")
+        html_text = render_markdown_text(text)
+        if self.enabled:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(html_text, encoding="utf-8")
+        return html_text
+
+    def og_image(self, out: Path, **content: str) -> None:
+        text = json.dumps(content, sort_keys=True)
+        path = OG_CACHE_DIR / f"{self.key(text, code_version('og_image.py'))}.png"
+        if not self._hit(path):
+            og_image.render(path if self.enabled else out, **content)
+            if not self.enabled:
+                return
+        out.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(path, out)
+
+    def prune(self) -> None:
+        """Drop the entries of posts and pages that no longer exist."""
+        if not self.enabled:
+            return
+        for folder in (RENDER_CACHE_DIR, OG_CACHE_DIR):
+            if folder.is_dir():
+                for entry in folder.iterdir():
+                    if entry not in self.used:
+                        entry.unlink(missing_ok=True)
+
+
+@lru_cache(maxsize=None)
+def code_version(*names: str) -> str:
+    """Hash of the files that produce a cached output (fonts count by name and size)."""
+    parts = [(ROOT / name).read_bytes() for name in names]
+    if "og_image.py" in names:
+        parts += [f"{f.name}:{f.stat().st_size}" for f in sorted((ROOT / "fonts").glob("*.ttf"))]
+    return BuildCache.key(*parts)
+
+
+cache = BuildCache()
+
+
 def build_post(source: Path, bundle: Path | None,
                project: dict | None = None, repo_root: Path | None = None) -> Post:
-    rendered = RENDERERS[source.suffix.lower()](source)
+    rendered = cache.render(source)
     meta = {**rendered.get("meta", {}), **read_sidecar(source, bundle)}
 
     # The primary post of a folder takes the folder URL; its siblings nest under it:
@@ -919,15 +1018,17 @@ def make_og_image(out_dir: Path, page_url: str, override: str | None, config: di
     if override:
         return resolve_image(override, page_url)
     host = str(config.get("url", "")).split("://")[-1].rstrip("/")
-    og_image.render(out_dir / page_url.strip("/") / OG_NAME, site=host, **content)
+    cache.og_image(out_dir / page_url.strip("/") / OG_NAME, site=host, **content)
     return page_url + OG_NAME
 
 
 def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
-          offline: bool = False, strict: bool = False) -> list[Post]:
+          offline: bool = False, strict: bool = False, use_cache: bool = True) -> list[Post]:
     config = yaml.safe_load((ROOT / "site.yml").read_text(encoding="utf-8")) or {}
 
     print("Building site")
+    started = time.perf_counter()
+    cache.enabled = use_cache
     posts = collect_posts(config, include_drafts, refresh, offline)
     report_issues(posts, strict)
     series, folders = link_folder_pages(posts)
@@ -941,7 +1042,10 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
         trim_blocks=True,
         lstrip_blocks=True,
     )
-    env.filters["markdown"] = render_markdown_text
+    if use_cache:
+        JINJA_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        env.bytecode_cache = FileSystemBytecodeCache(str(JINJA_CACHE_DIR))
+    env.filters["markdown"] = cache.markdown
 
     # Each project carries its own identity, the posts pulled from its repo, and
     # the commit activity of that repo (`activity: false` in site.yml turns it off).
@@ -1047,7 +1151,9 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
     write(out_dir / "feed.xml", build_feed(posts, config))
     (out_dir / ".nojekyll").write_text("", encoding="utf-8")
 
-    print(f"Done - {len(posts)} post(s) written to {out_dir}")
+    cache.prune()
+    print(f"Done - {len(posts)} post(s) written to {out_dir} in "
+          f"{time.perf_counter() - started:.1f}s (cache: {cache.hits} hit(s), {cache.misses} miss(es))")
     return posts
 
 
@@ -1069,6 +1175,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--drafts", action="store_true", help="include posts marked draft")
     parser.add_argument("--serve", nargs="?", const=8000, type=int, metavar="PORT",
                         help="serve the result locally after building")
+    parser.add_argument("--no-cache", action="store_true",
+                        help="re-render every post and preview image instead of "
+                             "reusing .cache/render and .cache/og")
     parser.add_argument("--refresh", action="store_true",
                         help="re-clone project blogs instead of reusing the cache")
     parser.add_argument("--offline", action="store_true",
@@ -1083,7 +1192,7 @@ def main(argv: list[str] | None = None) -> int:
         out_dir = ROOT / out_dir
 
     build(out_dir, include_drafts=args.drafts, refresh=args.refresh,
-          offline=args.offline, strict=args.strict)
+          offline=args.offline, strict=args.strict, use_cache=not args.no_cache)
     if args.serve:
         serve(out_dir, args.serve)
     return 0

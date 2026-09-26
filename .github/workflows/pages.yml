@@ -39,6 +39,17 @@ jobs:
       - name: Install build dependencies
         run: pip install -r requirements.txt
 
+      # Rendered posts and preview images are keyed by content hash, so a cache
+      # from any earlier run is safe to reuse; each run saves its own under a new key.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/render
+            .cache/og
+            .cache/jinja
+          key: build-cache-${{ github.run_id }}
+          restore-keys: build-cache-
+
       # --strict fails on unexecuted or failing notebooks and scratch files in posts/;
       # problems in project repos only warn, so they never block the daily rebuild.
       - name: Build the site

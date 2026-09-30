@@ -214,14 +214,17 @@ project repo shows up within a day. To publish one immediately, run the
 
 ---
 
-## Home, about and projects pages
+## Home, about, projects and publications pages
 
-All three come from `site.yml`. Do not edit the generated HTML.
+All of them come from `site.yml` (and `publications.bib`). Do not edit the
+generated HTML.
 
 - **Home** (`/`) is an overview: your name, a one-line `intro`, pinned posts,
   the latest posts, and the projects marked `featured: true`.
 - **About** (`/about/`) holds the presentation: `role` above the heading, `bio`
   as the lede, the `about:` narrative in Markdown, and the `interests` as cards.
+  `cv:` under `author` (a PDF in `static/files/`) adds a CV link there and on
+  the Publications page.
 - **Projects** (`/projects/`) lists the projects of `site.yml`. The list is
   written by hand; what fills in automatically is each project's posts, pulled
   from its repo, and its activity.
@@ -229,6 +232,34 @@ All three come from `site.yml`. Do not edit the generated HTML.
 Wherever projects appear (projects page, home page, blog filter), they are
 ordered busiest first: commits over the last 30 days, then the date of the
 latest commit, then their order in `site.yml`.
+
+### Publications
+
+`publications.bib` lists formal work: papers, preprints, reports and theses,
+talks. Each BibTeX entry becomes an item on `/publications/`, grouped by type
+(guessed from the entry type, or set with `category = {...}`), newest first,
+with your name highlighted, links (`pdf`, `doi`, arXiv `eprint`, `code`,
+`slides`, `poster`, `video`, a related blog `post`), a folded `abstract` and a
+BibTeX block to copy. The extra fields only drive the page; the BibTeX shown
+to readers keeps the standard ones. The file's header documents every field.
+
+While the file has no entry, the site has no Publications page and no menu
+link. The blog stays for working notes; this page is what a PhD committee or
+a recruiter looks for.
+
+### Search engines and citations
+
+Every page declares its canonical URL; `sitemap.xml` lists every public page
+(with the post date where there is one) and `robots.txt` points to it.
+Pages carry schema.org JSON-LD: a `Person` (name, profiles, interests) on the
+home and About pages, a `BlogPosting` (or `ScholarlyArticle` for a PDF) on each
+post. Post pages also carry the `citation_*` tags Google Scholar reads (title,
+author, date, and the PDF for PDF posts), and end with a folded **Cite this
+post** BibTeX entry.
+
+Scholar is selective: it indexes pages that look like papers, so PDF posts
+stand the best chance; a note or notebook is still found by ordinary search
+engines through the sitemap and structured data.
 
 ### Project activity
 
@@ -367,9 +398,11 @@ build.py                    the generator
 tests/                      tests of the build (pytest)
 activity.py                 commit activity of the project repos (GitHub API)
 og_image.py                 Open Graph preview images (Pillow)
+scholar.py                  citations, JSON-LD, sitemap, publications.bib parsing
 fonts/                      Inter and Source Serif 4 (OFL), used by og_image.py
 site.yml                    profile, interests, projects and their blog sources
 tags.yml                    tag vocabulary: descriptions and aliases
+publications.bib            the Publications page (BibTeX)
 posts/                      drop posts here
 templates/                  Jinja2 page templates
 assets/                     style.css, app.js (copied to /assets/)

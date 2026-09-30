@@ -1,3 +1,14 @@
+{# A BibTeX entry, folded, with a copy button (app.js). #}
+{% macro bibtex_block(bibtex, label='Cite this post') %}
+<details class="cite">
+  <summary>{{ label }}</summary>
+  <div class="cite-body">
+    <pre><code>{{ bibtex }}</code></pre>
+    <button type="button" class="cite-copy" data-copy>Copy</button>
+  </div>
+</details>
+{% endmacro %}
+
 {# A tag links to the blog filtered on it; on /blog/ itself, app.js filters in place. #}
 {% macro tag_pill(tag) %}<a class="tag" href="/blog/?tag={{ tag | lower | urlencode }}" data-tag-link="{{ tag | lower }}">{{ tag }}</a>{% endmacro %}
 

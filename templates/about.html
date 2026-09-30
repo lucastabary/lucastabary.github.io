@@ -9,6 +9,12 @@
     {% if author.role %}<p class="eyebrow">{{ author.role }}</p>{% endif %}
     <h1>About me</h1>
     {% if author.bio %}<p class="lede">{{ author.bio }}</p>{% endif %}
+    {% if author.cv or publications %}
+    <p class="hero-links">
+      {% if author.cv %}<a href="{{ author.cv }}">CV (PDF)</a>{% endif %}
+      {% if publications %}<a href="/publications/">Publications</a>{% endif %}
+    </p>
+    {% endif %}
   </div>
 </section>
 

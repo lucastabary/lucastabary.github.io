@@ -447,6 +447,38 @@ a.tag:hover { color: var(--accent); background: var(--accent-soft); text-decorat
 }
 .post-foot .wrap { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; }
 
+/* --- citations and publications ----------------------------------------- */
+
+.cite { margin-top: 2.5rem; font-family: var(--font-sans); font-size: .85rem; }
+.cite summary { cursor: pointer; color: var(--text-muted); font-weight: 500; width: fit-content; }
+.cite summary:hover { color: var(--accent); }
+.cite-body { position: relative; margin-top: .6rem; }
+.cite pre {
+  margin: 0; padding: .85rem 1rem; overflow-x: auto; font-size: .78rem; line-height: 1.55;
+  background: var(--code-bg); border: 1px solid var(--border-soft); border-radius: var(--radius);
+}
+.cite-copy {
+  position: absolute; top: .5rem; right: .5rem; cursor: pointer;
+  font: 500 .72rem var(--font-sans); color: var(--text-muted);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: .2rem .55rem;
+}
+.cite-copy:hover { color: var(--accent); border-color: var(--accent); }
+
+.pub-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.6rem; }
+/* min-width: 0 lets a grid item shrink below its content, so an open BibTeX
+   block scrolls inside its box instead of widening the page. */
+.pub { min-width: 0; }
+.pub p { margin: 0; }
+.pub-title { font-family: var(--font-sans); font-weight: 600; font-size: 1.05rem; line-height: 1.4; }
+.pub-authors { color: var(--text-muted); margin-top: .25rem !important; }
+.pub-authors strong { color: var(--text); font-weight: 600; }
+.pub-venue { color: var(--text-muted); font-size: .95rem; }
+.pub-links { display: flex; flex-wrap: wrap; gap: .35rem .9rem; margin-top: .45rem; font-family: var(--font-sans); font-size: .82rem; font-weight: 500; }
+.pub-links:empty { display: none; }
+.pub .cite, .pub-abstract { margin-top: .5rem; font-family: var(--font-sans); font-size: .82rem; }
+.pub-abstract summary { cursor: pointer; color: var(--text-muted); font-weight: 500; width: fit-content; }
+.pub-abstract p { margin-top: .5rem; font-family: var(--font-serif); font-size: .95rem; color: var(--text-muted); }
+
 /* --- pdf viewer ---------------------------------------------------------- */
 
 .pdf-frame-wrap { max-width: 68rem; margin: 1.5rem auto 0; padding-inline: 1.5rem; }

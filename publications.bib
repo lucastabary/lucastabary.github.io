@@ -1,0 +1,34 @@
+% ---------------------------------------------------------------------------
+% Publications page (/publications/). While this file has no entry, the site
+% has no Publications page and no menu link.
+%
+% Plain BibTeX, one entry per work. The page groups entries by type:
+%   Publications       @article, @inproceedings, @incollection, @book, ...
+%   Preprints          @unpublished, or any entry with an arXiv eprint
+%   Reports & theses   @techreport, @mastersthesis, @phdthesis, @thesis
+%   Talks & posters    @misc whose howpublished/note mentions a talk or poster
+% `category = {publication|preprint|report|talk|other}` overrides the guess.
+%
+% Standard fields give the text (author, title, journal / booktitle /
+% institution, year, note, doi, eprint, url). These extra fields add links and
+% are left out of the BibTeX shown to readers:
+%   pdf, code, slides, poster, video   links (a /files/... path or a URL)
+%   post                               a related blog post, e.g. /blog/nirs-spectroscopy/vae/
+%   abstract                           shown folded under the entry
+% Put PDFs in static/files/ (static/files/x.pdf is served at /files/x.pdf).
+% Your own name is highlighted in author lists.
+%
+% Example (remove the leading "% " to use it):
+%
+% @techreport{tabary2025nirs,
+%   author      = {Tabary, Lucas and Doe, Jane},
+%   title       = {Latent Space Exploration of {NIRS} Measurements of Plant Specimens},
+%   institution = {Telecom Nancy, Universit{\'e} de Lorraine},
+%   type        = {Research initiation project report},
+%   year        = {2025},
+%   month       = jun,
+%   pdf         = {/files/nirs-report.pdf},
+%   code        = {https://github.com/lucastabary/PIDR_RICOCHET},
+%   post        = {/blog/nirs-spectroscopy/},
+% }
+% ---------------------------------------------------------------------------

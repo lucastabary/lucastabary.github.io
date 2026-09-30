@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import bibtex_block %}
+
+{% block title %}{{ (config.pages or {}).publications or 'Publications' }}{% endblock %}
+{% block description %}Papers, preprints, reports and talks by {{ author.name }}.{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <h1>Publications</h1>
+    <p class="lede">Papers, preprints, reports and talks.{% if author.cv %} A full list is in my <a href="{{ author.cv }}">CV</a>.{% endif %}</p>
+  </div>
+</section>
+
+{% for group in publications %}
+<section class="band">
+  <div class="wrap">
+    <h2 class="section-title">{{ group.title }}</h2>
+    <ol class="pub-list" reversed>
+      {% for pub in group.entries %}
+      <li class="pub" id="{{ pub.id }}">
+        <p class="pub-title">{{ pub.title }}</p>
+        {% if pub.authors %}
+        <p class="pub-authors">
+          {%- for person in pub.authors -%}
+          {% if person.me %}<strong>{{ person.name }}</strong>{% else %}{{ person.name }}{% endif %}{{ ', ' if not loop.last }}
+          {%- endfor -%}
+        </p>
+        {% endif %}
+        <p class="pub-venue">
+          {%- if pub.venue %}<em>{{ pub.venue }}</em>{% endif %}
+          {%- if pub.venue and pub.year %}, {% endif %}{{ pub.year or '' }}
+          {%- if pub.note %} &middot; {{ pub.note }}{% endif -%}
+        </p>
+        <div class="pub-links">
+          {% for link in pub.links %}<a href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+        </div>
+        {% if pub.abstract %}
+        <details class="pub-abstract">
+          <summary>Abstract</summary>
+          <p>{{ pub.abstract }}</p>
+        </details>
+        {% endif %}
+        {{ bibtex_block(pub.bibtex, 'BibTeX') }}
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

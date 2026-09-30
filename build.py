@@ -44,6 +44,7 @@ from jinja2 import Environment, FileSystemBytecodeCache, FileSystemLoader, selec
 
 import activity
 import og_image
+import scholar
 
 ROOT = Path(__file__).resolve().parent
 POSTS_DIR = ROOT / "posts"
@@ -51,6 +52,7 @@ TEMPLATES_DIR = ROOT / "templates"
 ASSETS_DIR = ROOT / "assets"
 STATIC_DIR = ROOT / "static"
 TAGS_FILE = ROOT / "tags.yml"
+PUBLICATIONS_FILE = ROOT / "publications.bib"
 CACHE_DIR = ROOT / ".cache" / "sources"
 ACTIVITY_CACHE_DIR = ROOT / ".cache" / "activity"
 RENDER_CACHE_DIR = ROOT / ".cache" / "render"   # rendered posts, by content hash
@@ -821,6 +823,27 @@ def externalise_images(body: str, post_dir: Path) -> str:
     return re.sub(r"<img\b(?![^>]*\bloading=)", '<img loading="lazy" decoding="async"', body)
 
 
+def post_page_data(post: Post, config: dict) -> dict:
+    """What a post page adds for search engines and citations."""
+    site_url = str(config.get("url", "")).rstrip("/")
+    author = config.get("author") or {}
+    url = site_url + post.url
+    image = None
+    if post.og_image:
+        image = post.og_image if post.og_image.startswith("http") else site_url + post.og_image
+    return {
+        "page_url": post.url,
+        "json_ld": scholar.post_ld(title=post.title, summary=post.summary, url=url,
+                                   date=post.date, tags=post.tags, kind=post.kind,
+                                   image=image, author=author, site_url=site_url),
+        "citation_meta": scholar.citation_meta(
+            title=post.title, author=author.get("name", ""), date=post.date,
+            pdf_url=site_url + post.pdf_url if post.pdf_url else None),
+        "bibtex": scholar.post_bibtex(title=post.title, author=author.get("name", ""), url=url,
+                                      date=post.date, kind_label=post.kind_label),
+    }
+
+
 def write_post(post: Post, out_dir: Path, env: Environment, ctx: dict) -> None:
     post_dir = out_dir / post.url.strip("/")
     post_dir.mkdir(parents=True, exist_ok=True)
@@ -834,7 +857,8 @@ def write_post(post: Post, out_dir: Path, env: Environment, ctx: dict) -> None:
     if post.kind == "pdf":
         post.pdf_name = post.source.name
         post.raw_name = None
-        page = env.get_template("pdf.html").render(post=post, og_image=post.og_image, **ctx)
+        page = env.get_template("pdf.html").render(
+            post=post, og_image=post.og_image, **post_page_data(post, ctx["config"]), **ctx)
     elif post.standalone_html is not None:
         page = re.sub(r"(<body[^>]*>)", lambda m: m.group(1) + BACK_BAR,
                       post.standalone_html, count=1, flags=re.I)
@@ -842,7 +866,8 @@ def write_post(post: Post, out_dir: Path, env: Environment, ctx: dict) -> None:
             page = BACK_BAR + page
     else:
         post.body = externalise_images(post.body, post_dir)
-        page = env.get_template("post.html").render(post=post, og_image=post.og_image, **ctx)
+        page = env.get_template("post.html").render(
+            post=post, og_image=post.og_image, **post_page_data(post, ctx["config"]), **ctx)
 
     write(post_dir / "index.html", page)
 
@@ -1149,6 +1174,8 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
     for post in posts:
         for tag in post.tags:
             tag_counts[tag] = tag_counts.get(tag, 0) + 1
+    publications = scholar.load_publications(
+        PUBLICATIONS_FILE, (config.get("author") or {}).get("name", ""))
     tags = [{"name": name, "key": name.lower(), "count": count,
              "description": str(tag_registry.get(name, {}).get("description") or "").strip()}
             for name, count in sorted(tag_counts.items(), key=lambda kv: kv[0].lower())]
@@ -1162,6 +1189,7 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
         "has_standalone_posts": any(p.project is None for p in posts),
         "folders": folders,
         "tags": tags,
+        "publications": publications,
         "build_date": dt.date.today(),
     }
 
@@ -1184,7 +1212,8 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
                               eyebrow=f"Series · {len(page['posts'])} posts",
                               summary=page["summary"], footer=footer())
         write(out_dir / page["url"].strip("/") / "index.html",
-              series_template.render(**ctx, active="blog", series=page, og_image=image))
+              series_template.render(**ctx, active="blog", series=page, og_image=image,
+                                     page_url=page["url"]))
         log(f"+ {page['url']}  (folder, {len(page['posts'])} post(s)) {page['title']}")
 
     home = config.get("home") or {}
@@ -1200,6 +1229,11 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
         ("blog.html", "blog/index.html", {"active": "blog"}),
         ("404.html", "404.html", {"active": ""}),
     ]
+    if publications:
+        pages.insert(3, ("publications.html", "publications/index.html",
+                         {"active": "publications"}))
+    site_url = str(config.get("url", "")).rstrip("/")
+    identity = scholar.site_ld(config, site_url)     # who the site is by, on home and about
     # Previews of the fixed pages; `og_images:` in site.yml replaces any of them.
     overrides = config.get("og_images") or {}
     author = config.get("author") or {}
@@ -1211,13 +1245,17 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
         "projects": {"title": "Research and personal work", "eyebrow": "Projects",
                      "summary": "Research work, coursework and things built out of curiosity."},
         "about": {"title": "About me", "eyebrow": "About", "summary": author.get("bio", "")},
+        "publications": {"title": "Publications", "eyebrow": "Research",
+                         "summary": "Papers, preprints, reports and talks."},
     }
     for template_name, target, extra in pages:
         name = template_name.removesuffix(".html")
         if name in previews:
             url = "/" + target.removesuffix("index.html")
-            extra = {**extra, "og_image": make_og_image(
+            extra = {**extra, "page_url": url, "og_image": make_og_image(
                 out_dir, url, overrides.get(name), config, footer=footer(), **previews[name])}
+            if name in ("home", "about"):
+                extra["json_ld"] = identity
         write(out_dir / target, env.get_template(template_name).render(**ctx, **extra))
         log(f"+ /{target}")
 
@@ -1228,7 +1266,8 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
                               title=project["name"], eyebrow="Project",
                               summary=str(project.get("text", "")), footer=footer())
         write(out_dir / target, project_template.render(
-            **ctx, active="projects", project=project, og_image=image))
+            **ctx, active="projects", project=project, og_image=image,
+            page_url=project["url"]))
         log(f"+ /{target}  ({len(project['posts'])} post(s))")
 
     if ASSETS_DIR.is_dir():
@@ -1237,6 +1276,18 @@ def build(out_dir: Path, include_drafts: bool = False, refresh: bool = False,
         copy_tree(STATIC_DIR, out_dir)
     write(out_dir / "assets" / "pygments.css", build_pygments_css())
     write(out_dir / "feed.xml", build_feed(posts, config))
+    if site_url:
+        # Every public page, with a last-modified date where there is a meaningful one.
+        latest = max((p.date for p in posts if p.date), default=None)
+        listed = [(p.url, p.date) for p in posts]
+        listed += [(s["url"], s["date"]) for s in series]
+        listed += [(p["url"], (p["activity"] or {}).get("last_date")) for p in projects]
+        for template_name, target, _ in pages:
+            if template_name != "404.html":
+                listed.append(("/" + target.removesuffix("index.html"),
+                               latest if template_name == "blog.html" else None))
+        write(out_dir / "sitemap.xml", scholar.sitemap(site_url, listed))
+        write(out_dir / "robots.txt", scholar.robots(site_url))
     (out_dir / ".nojekyll").write_text("", encoding="utf-8")
 
     cache.prune()

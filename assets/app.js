@@ -167,6 +167,18 @@
     apply();
   }
 
+  /* --- copy buttons (BibTeX) --------------------------------------------- */
+
+  document.addEventListener("click", function (event) {
+    var button = event.target.closest && event.target.closest("[data-copy]");
+    if (!button || !navigator.clipboard) return;
+    var code = button.parentNode.querySelector("code");
+    navigator.clipboard.writeText(code.textContent).then(function () {
+      button.textContent = "Copied";
+      setTimeout(function () { button.textContent = "Copy"; }, 1500);
+    });
+  });
+
   /* --- table of contents ------------------------------------------------- */
 
   var body = document.querySelector("[data-post-body]");

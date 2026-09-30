@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 
 import pytest
@@ -21,12 +23,14 @@ def site(tmp_path, monkeypatch):
     monkeypatch.setattr(build, "POSTS_DIR", posts)
     monkeypatch.setattr(build, "CACHE_DIR", tmp_path / "cache" / "sources")
     monkeypatch.setattr(build, "ACTIVITY_CACHE_DIR", tmp_path / "cache" / "activity")
+    monkeypatch.setattr(build, "PUBLICATIONS_FILE", tmp_path / "publications.bib")
 
     def run(strict: bool = False) -> Path:
         out = tmp_path / "out"
         build.build(out, offline=True, strict=strict, use_cache=False)
         return out
     run.posts = posts
+    run.bib = tmp_path / "publications.bib"
     return run
 
 
@@ -55,3 +59,35 @@ def test_strict_build_fails_on_an_unexecuted_notebook(site):
     site()                                          # a normal build only warns
     with pytest.raises(SystemExit):
         site(strict=True)
+
+
+def test_search_engine_files_and_tags(site):
+    out = site()
+    sitemap = (out / "sitemap.xml").read_text(encoding="utf-8")
+    for url in ("/", "/about/", "/blog/", "/blog/first/", "/blog/second/extra/", "/projects/"):
+        assert f"<loc>https://lucastabary.github.io{url}</loc>" in sitemap
+    assert "404" not in sitemap
+    assert (out / "robots.txt").read_text(encoding="utf-8").startswith("User-agent: *")
+
+    page = (out / "blog" / "first" / "index.html").read_text(encoding="utf-8")
+    assert '<link rel="canonical" href="https://lucastabary.github.io/blog/first/">' in page
+    assert '<meta name="citation_title" content="First">' in page
+    ld = json.loads(re.search(r'application/ld\+json">(.*?)</script>', page, re.S).group(1))
+    assert ld["@type"] == "BlogPosting" and ld["headline"] == "First"
+    assert "@misc{tabary2026first," in page                     # Cite this post
+    home = (out / "index.html").read_text(encoding="utf-8")
+    assert '"@type": "Person"' in home
+
+
+def test_publications_page_only_with_entries(site):
+    out = site()
+    assert not (out / "publications").exists()
+    assert 'href="/publications/"' not in (out / "index.html").read_text(encoding="utf-8")
+
+    site.bib.write_text("@article{x2025, author={Tabary, Lucas}, title={A Paper}, "
+                        "journal={J}, year={2025}}", encoding="utf-8")
+    out = site()
+    page = (out / "publications" / "index.html").read_text(encoding="utf-8")
+    assert "<strong>Lucas Tabary</strong>" in page and "A Paper" in page
+    assert 'href="/publications/"' in (out / "index.html").read_text(encoding="utf-8")
+    assert "/publications/" in (out / "sitemap.xml").read_text(encoding="utf-8")

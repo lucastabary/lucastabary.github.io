@@ -31,6 +31,9 @@ author:
     I study how learning systems represent structure — in artificial networks
     and in biological ones — and how to read it back from their internal states.
   email: lucas.tabary01@gmail.com
+  # A PDF of your CV: put it in static/files/ and uncomment. Linked from the
+  # About and Publications pages.
+  # cv: /files/cv.pdf
   links:
     - label: Email
       url: mailto:lucas.tabary01@gmail.com

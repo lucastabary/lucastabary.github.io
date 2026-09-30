@@ -23,6 +23,17 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="{{ og_url }}">
 {% endif %}
+{% if page_url is defined and config.url %}
+<link rel="canonical" href="{{ config.url | trim('/') }}{{ page_url }}">
+<meta property="og:url" content="{{ config.url | trim('/') }}{{ page_url }}">
+{% endif %}
+{# Read by Google Scholar on post pages: title, author, date, PDF. #}
+{% if citation_meta is defined %}{% for name, content in citation_meta %}
+<meta name="{{ name }}" content="{{ content }}">
+{% endfor %}{% endif %}
+{% if json_ld is defined %}
+<script type="application/ld+json">{{ json_ld | tojson }}</script>
+{% endif %}
 <link rel="alternate" type="application/rss+xml" title="{{ site_title }}" href="/feed.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,6 +68,7 @@
     <nav class="site-nav" aria-label="Main">
       <a href="/blog/"{% if active == 'blog' %} class="current" aria-current="page"{% endif %}>Blog</a>
       <a href="/projects/"{% if active == 'projects' %} class="current" aria-current="page"{% endif %}>Projects</a>
+      {% if publications %}<a href="/publications/"{% if active == 'publications' %} class="current" aria-current="page"{% endif %}>Publications</a>{% endif %}
       <a href="/about/"{% if active == 'about' %} class="current" aria-current="page"{% endif %}>About</a>
       {# Shows where a click takes you: a moon in light mode, a sun in dark mode. #}
       <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark theme" title="Switch between light and dark theme">

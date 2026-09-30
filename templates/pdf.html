@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import post_crumb, sequence_nav, tag_pill %}
+{% from "_macros.html" import post_crumb, sequence_nav, tag_pill, bibtex_block %}
 
 {% block title %}{{ post.title }}{% endblock %}
 {% block description %}{{ post.summary }}{% endblock %}
@@ -37,6 +37,8 @@
   </div>
 
   {% if post.sequence %}<div class="wrap">{{ sequence_nav(post) }}</div>{% endif %}
+
+  {% if bibtex %}<div class="wrap">{{ bibtex_block(bibtex) }}</div>{% endif %}
 
   <footer class="post-foot">
     <div class="wrap">

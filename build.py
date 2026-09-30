@@ -20,6 +20,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as dt
 import hashlib
 import html as html_lib
@@ -783,6 +784,43 @@ def write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+INLINE_IMG_RE = re.compile(
+    r'<img\b([^>]*?)\ssrc="data:image/(png|jpeg|gif|svg\+xml);base64,([^"]+)"([^>]*)>', re.I)
+IMG_EXTS = {"png": "png", "jpeg": "jpg", "gif": "gif", "svg+xml": "svg"}
+
+
+def externalise_images(body: str, post_dir: Path) -> str:
+    """Move the base64 images nbconvert inlines into files next to the page.
+
+    A notebook with a dozen figures otherwise weighs megabytes of HTML that must
+    all download before anything shows. As files, they load lazily as the reader
+    scrolls; width and height are kept so the page does not jump when they
+    arrive. Files are named by content hash, so identical figures share one.
+    """
+    from io import BytesIO
+
+    from PIL import Image
+
+    def extract(match: re.Match) -> str:
+        before, kind, data, after = match.groups()
+        raw = base64.b64decode(re.sub(r"\s+", "", data))
+        name = f"fig-{hashlib.sha256(raw).hexdigest()[:12]}.{IMG_EXTS[kind.lower()]}"
+        (post_dir / name).write_bytes(raw)
+        attrs = before + after
+        extra = ""
+        if "width=" not in attrs and kind.lower() != "svg+xml":
+            try:
+                width, height = Image.open(BytesIO(raw)).size
+                extra += f' width="{width}" height="{height}"'
+            except OSError:
+                pass
+        return f'<img{before} src="{name}"{after}{extra}>'
+
+    body = INLINE_IMG_RE.sub(extract, body)
+    # Every image in a post (Markdown figures too) loads when it comes into view.
+    return re.sub(r"<img\b(?![^>]*\bloading=)", '<img loading="lazy" decoding="async"', body)
+
+
 def write_post(post: Post, out_dir: Path, env: Environment, ctx: dict) -> None:
     post_dir = out_dir / post.url.strip("/")
     post_dir.mkdir(parents=True, exist_ok=True)
@@ -803,6 +841,7 @@ def write_post(post: Post, out_dir: Path, env: Environment, ctx: dict) -> None:
         if page == post.standalone_html:      # no <body> tag to hook onto
             page = BACK_BAR + page
     else:
+        post.body = externalise_images(post.body, post_dir)
         page = env.get_template("post.html").render(post=post, og_image=post.og_image, **ctx)
 
     write(post_dir / "index.html", page)

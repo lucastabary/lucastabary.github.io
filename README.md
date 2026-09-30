@@ -146,6 +146,12 @@ other active filters (project, folder, search); a chip matching none is dimmed.
 | `hide_output` | keep the code, drop the output |
 | `hide_cell` | drop the cell entirely |
 
+Figures in a notebook's outputs are not left inline in the page: the build
+writes each one next to it as `fig-<hash>.png` (or `.svg`, `.jpg`), with its
+width and height, and every image in a post loads lazily. A notebook with
+many figures then shows its text at once instead of downloading megabytes of
+base64 first.
+
 ---
 
 ## Posts that live in a project repository

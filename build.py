@@ -1267,8 +1267,15 @@ def make_server(out_dir: Path, port: int, build_id=None):
                 return self.send_bytes(page, "text/html; charset=utf-8")
             return super().do_GET()
 
+    class Server(ThreadingHTTPServer):
+        def handle_error(self, request, client_address):
+            # The browser dropping a request (a reload, a navigation) is routine.
+            if isinstance(sys.exc_info()[1], ConnectionError):
+                return
+            super().handle_error(request, client_address)
+
     handler = functools.partial(Handler, directory=str(out_dir))
-    return ThreadingHTTPServer(("127.0.0.1", port), handler)
+    return Server(("127.0.0.1", port), handler)
 
 
 def serve(out_dir: Path, port: int) -> None:

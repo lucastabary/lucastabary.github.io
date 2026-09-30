@@ -145,7 +145,7 @@ main { min-height: 60vh; }
 
 /* Home button: a house icon in a small square, echoing the theme toggle. */
 .home-link {
-  width: 34px; height: 34px; display: grid; place-items: center;
+  flex: none; width: 34px; height: 34px; display: grid; place-items: center;
   color: var(--text); border: 1px solid var(--border); border-radius: 9px;
   transition: color .15s, background-color .15s, border-color .15s;
 }
@@ -632,6 +632,8 @@ h2:hover .heading-anchor, h3:hover .heading-anchor { opacity: 1; }
   .bar { padding-inline: 1rem; }
   .wrap { padding-inline: 1rem; }
   .site-nav a { padding: .35rem .45rem; font-size: .84rem; }
+  .site-nav { gap: .1rem; }
+  .theme-toggle { flex: none; }
   .post-list-pinned .post-card { padding: 1rem 1.05rem; }
   .post-card { margin-inline: -.5rem; padding-inline: .5rem; }
 }

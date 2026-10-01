@@ -42,14 +42,7 @@
       {% for post in project.posts %}{{ post_card(post, show_project=False) }}{% endfor %}
     </div>
     {% else %}
-    <p class="empty">
-      No notes yet.
-      {% if project.repo and project.blog %}
-      They will appear here as soon as <code>{{ project.blog }}/</code> in
-      <a href="{{ project.repo_url }}">{{ project.repo }}</a> holds a
-      <code>.md</code>, <code>.ipynb</code>, <code>.html</code> or <code>.pdf</code> file.
-      {% endif %}
-    </p>
+    <p class="empty">No notes from this project yet.</p>
     {% endif %}
   </div>
 </section>

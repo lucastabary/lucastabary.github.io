@@ -173,7 +173,6 @@ home:
   # Posts to pin at the top, in this order. Name a post by its URL without
   # /blog/: `how-this-blog-works`, or `nirs-spectroscopy/vae` for a project
   # post. `featured: true` in a post's own metadata pins it too.
-  featured_posts:
-    - how-this-blog-works
+  featured_posts: []
   # How many of the latest posts to list under the pinned ones.
   recent_posts: 4

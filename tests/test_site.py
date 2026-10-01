@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import re
 from pathlib import Path
 
@@ -91,3 +92,13 @@ def test_publications_page_only_with_entries(site):
     assert "<strong>Lucas Tabary</strong>" in page and "A Paper" in page
     assert 'href="/publications/"' in (out / "index.html").read_text(encoding="utf-8")
     assert "/publications/" in (out / "sitemap.xml").read_text(encoding="utf-8")
+
+
+def test_empty_blog_hides_the_home_blog_button(site):
+    assert "Read the blog" in (site() / "index.html").read_text(encoding="utf-8")
+    shutil.rmtree(site.posts)
+    site.posts.mkdir()
+    out = site()
+    home = (out / "index.html").read_text(encoding="utf-8")
+    assert "Read the blog" not in home and "All posts" not in home
+    assert "Nothing published yet" in (out / "blog" / "index.html").read_text(encoding="utf-8")

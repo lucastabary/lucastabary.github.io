@@ -11,7 +11,7 @@
       <p class="lede">{{ author.intro or config.description }}</p>
       <p class="intro-links">
         <a class="button" href="/about/">About me</a>
-        <a class="button button-ghost" href="/blog/">Read the blog</a>
+        {% if posts %}<a class="button button-ghost" href="/blog/">Read the blog</a>{% endif %}
         {% for link in author.links %}<a class="intro-link" href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
       </p>
     </div>
@@ -50,7 +50,7 @@
 <section class="band">
   <div class="wrap">
     <h2 class="section-title">{{ 'More posts' if pinned else 'Latest posts' }}
-      <a class="section-more" href="/blog/">All posts &rarr;</a>
+      {% if posts %}<a class="section-more" href="/blog/">All posts &rarr;</a>{% endif %}
     </h2>
     {% if recent %}
     <div class="post-list">

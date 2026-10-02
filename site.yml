@@ -158,6 +158,11 @@ blog:
 project_cards:
   activity: heatmap
 
+# Whether project cards and pages show commit activity at all. When false,
+# nothing is drawn, but the build still reads the commits to list projects
+# busiest first.
+show_activity: false
+
 # Preview images (Open Graph) for the fixed pages. Every page gets a generated
 # 1200x630 PNG; name an image here to use it instead. Put the file in static/
 # (static/images/og-home.png is served at /images/og-home.png) or give a URL.

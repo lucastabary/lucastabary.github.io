@@ -102,3 +102,34 @@ def test_empty_blog_hides_the_home_blog_button(site):
     home = (out / "index.html").read_text(encoding="utf-8")
     assert "Read the blog" not in home and "All posts" not in home
     assert "Nothing published yet" in (out / "blog" / "index.html").read_text(encoding="utf-8")
+
+
+def test_show_activity_hides_charts_but_keeps_busiest_first(site, monkeypatch):
+    import datetime as dt
+    import yaml
+    today = dt.date.today()
+    # Only the last project of site.yml has commits, so it must be listed first.
+    last_repo = (yaml.safe_load(Path(build.ROOT / "site.yml").read_text(encoding="utf-8"))
+                 ["projects"][-1]["repo"])
+    monkeypatch.setattr(build.activity, "commit_dates",
+                        lambda repo, *a: [today] * 5 if repo == last_repo else [])
+    load = yaml.safe_load
+
+    def with_activity(shown):
+        def patched(text):
+            data = load(text)
+            if isinstance(data, dict) and "projects" in data:
+                data["show_activity"] = shown
+            return data
+        monkeypatch.setattr(build.yaml, "safe_load", patched)
+        return site()
+
+    out = with_activity(False)
+    projects = (out / "projects" / "index.html").read_text(encoding="utf-8")
+    assert 'class="activity' not in projects
+    first = re.search(r'<h3><a href="(/projects/[^"]+/)"', projects).group(1)
+    page = (out / first.strip("/") / "index.html").read_text(encoding="utf-8")
+    assert "Commit history" not in page and last_repo in page
+
+    out = with_activity(True)
+    assert 'class="activity' in (out / "projects" / "index.html").read_text(encoding="utf-8")

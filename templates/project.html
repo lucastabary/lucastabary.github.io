@@ -21,7 +21,7 @@
   </div>
 </section>
 
-{% if project.lifetime %}
+{% if project.lifetime and config.show_activity | default(true) %}
 <section class="band">
   <div class="wrap">
     <h2 class="section-title">Activity

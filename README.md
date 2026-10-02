@@ -7,8 +7,7 @@ learning, computational neuroscience and interpretability. The site gathers:
 
 - **Blog**: research notes, Jupyter notebooks and papers, including notes
   written inside each project's own repository.
-- **Projects**: research and personal work, with their notes and commit
-  activity.
+- **Projects**: research and personal work, with their notes.
 
 ## How it is built
 

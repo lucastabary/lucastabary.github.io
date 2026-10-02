@@ -1,9 +1,9 @@
 # lucastabary.github.io
 
-Personal research site. `README.md` is the full reference for how posts, metadata, project blogs and deployment work; read it before changing anything.
+Personal research site, used by Lucas alone. `README.md` is a short public presentation, not a manual: keep it that way. How the build behaves is documented where it lives: the docstrings of `build.py`, `activity.py`, `og_image.py` and `scholar.py`, the comments in `site.yml`, `tags.yml` and `publications.bib`, and the tests in `tests/`. Read the relevant ones before changing anything.
 
 - `build.py` renders `templates/` + `site.yml` + `posts/` into `_site/`. Never edit `_site/` or generated HTML; edit data in `site.yml` and layout in `templates/` / `assets/`.
-- Deployment is automatic on push to `main`. Never push unless asked.
+- Deployment is automatic on push to `main` (`.github/workflows/pages.yml`, which also rebuilds daily to collect project posts). It needs the GitHub Pages source set to "GitHub Actions". Never push unless asked.
 - To write a new post, use the `create-blogpost` skill.
 - AI review: adding the `ai-review` label to a PR that touches `posts/` runs `.github/workflows/ai-review.yml`, which reviews the changed posts with Copilot (`actions/ai-inference`, prompt in `.github/prompts/post-review.prompt.yml`) and comments on the PR. The model answers in JSON, rendered by `.github/scripts/ai_review_report.py`; the check fails when there are "must fix" items or the answer is not valid JSON. It spends the owner's Copilot credits (secret `COPILOT_GITHUB_TOKEN`), so it is on demand only.
 

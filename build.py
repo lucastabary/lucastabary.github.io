@@ -11,7 +11,7 @@ Drop a file in ``posts/`` and it becomes a page. Nothing else to edit:
     posts/my-post/appendix.md           ->  /blog/my-post/appendix/   (every file is a post)
 
 Title, date, summary and tags are inferred from the file, and can be overridden
-with front matter or a ``<name>.meta.yml`` sidecar. See README.md.
+with front matter or a ``<name>.meta.yml`` sidecar.
 
 Usage:
     python build.py [--drafts] [--out _site] [--serve [PORT]]

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import post_card %}
+
+{% block title %}{{ (config.pages or {}).blog or 'Blog' }}{% endblock %}
+{% block description %}{{ config.blog.tagline | default('Notes and experiments.') }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <p class="eyebrow">Blog &middot; {{ posts | length }} post{{ '' if posts | length == 1 else 's' }}</p>
+    <h1>Notes, notebooks and experiments</h1>
+    {% if config.blog and config.blog.tagline %}
+    <p class="lede">{{ config.blog.tagline }}</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    {% if posts %}
+    {# Filters are combined (AND) and mirrored in the URL: /blog/?project=x&folder=y&tag=z. #}
+    <div class="filters" data-filters>
+      <label class="search">
+        <span class="visually-hidden">Search posts</span>
+        <input type="search" id="post-search" placeholder="Search posts" autocomplete="off" data-search>
+      </label>
+      {% if projects_with_posts %}
+      <div class="filter-group">
+        <span class="filter-label">Project</span>
+        <div class="chip-row" role="group" aria-label="Filter by project">
+          <button type="button" class="chip is-active" data-project="">All</button>
+          {% for project in projects_with_posts %}
+          <button type="button" class="chip" data-project="{{ project.slug }}">{{ project.short }} <span class="chip-count">{{ project.posts | length }}</span></button>
+          {% endfor %}
+          {% if has_standalone_posts %}
+          <button type="button" class="chip" data-project="_none">Standalone</button>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+      {% if folders %}
+      <div class="filter-group">
+        <span class="filter-label">Folder</span>
+        <div class="chip-row" role="group" aria-label="Filter by folder">
+          <button type="button" class="chip is-active" data-folder="">All</button>
+          {% for folder in folders %}
+          <button type="button" class="chip" data-folder="{{ folder.key }}" data-folder-project="{{ folder.project or '_none' }}">{{ folder.title }} <span class="chip-count">{{ folder.count }}</span></button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% if tags %}
+      <div class="filter-group">
+        <span class="filter-label">Tag</span>
+        <div class="chip-row" role="group" aria-label="Filter by tag">
+          <button type="button" class="chip is-active" data-tag="">All</button>
+          {# The count is the build-time total; app.js keeps it in step with the other filters. #}
+          {% for tag in tags %}
+          <button type="button" class="chip" data-tag="{{ tag.key }}"{% if tag.description %} title="{{ tag.description }}"{% endif %}>{{ tag.name }} <span class="chip-count" data-tag-count>{{ tag.count }}</span></button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <p class="filter-status" data-filter-status aria-live="polite"></p>
+    <div class="post-list" data-post-list>
+      {% for post in posts %}{{ post_card(post) }}{% endfor %}
+    </div>
+    <p class="empty" data-no-results hidden>No post matches these filters.</p>
+    {% else %}
+    <p class="empty">Nothing published yet. The first notes are on their way.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

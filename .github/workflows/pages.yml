@@ -1,0 +1,81 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Project repositories do not notify this one, so rebuild daily to pick up
+  # posts added to their blog/ folders. Run it by hand from the Actions tab to
+  # publish one immediately.
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+# Least privilege: read the repo, publish to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; queue them instead of cancelling a live one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # build.py dates undated posts from their last commit, so it needs history.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Install build and test dependencies
+        run: pip install -r requirements-dev.txt
+
+      # The build's own logic (parsing, tags, folders, activity, a small end-to-end
+      # build). A failure here stops the deploy before anything is built.
+      - name: Test the build
+        run: python -m pytest -q
+
+      # Rendered posts and preview images are keyed by content hash, so a cache
+      # from any earlier run is safe to reuse; each run saves its own under a new key.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .cache/render
+            .cache/og
+            .cache/jinja
+          key: build-cache-${{ github.run_id }}
+          restore-keys: build-cache-
+
+      # --strict fails on unexecuted or failing notebooks and scratch files in posts/;
+      # problems in project repos only warn, so they never block the daily rebuild.
+      - name: Build the site
+        run: python build.py --strict
+        env:
+          # Lifts the GitHub API rate limit for the project activity heatmaps.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    # Pull requests get the build as a check only; main is what goes live.
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

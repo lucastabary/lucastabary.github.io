@@ -1,0 +1,12 @@
+# Build-time dependencies for build.py (installed by .github/workflows/pages.yml).
+nbconvert>=7.16
+nbformat>=5.10
+Jinja2>=3.1
+Markdown>=3.6
+pymdown-extensions>=10.8
+Pygments>=2.18
+PyYAML>=6.0
+pypdf>=4.2
+ipython>=8.24        # provides the IPython3 lexer so %magics highlight correctly
+Pillow>=10.3          # draws the Open Graph preview images
+bibtexparser>=1.4,<2  # reads publications.bib

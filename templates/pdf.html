@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "_macros.html" import post_crumb, sequence_nav, tag_pill, bibtex_block %}
+
+{% block title %}{{ post.title }}{% endblock %}
+{% block description %}{{ post.summary }}{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.summary }}{% endblock %}
+
+{% block content %}
+<article class="post post-pdf">
+  <header class="post-head">
+    <div class="wrap">
+      {{ post_crumb(post) }}
+      <h1>{{ post.title }}</h1>
+      <div class="post-meta">
+        <time datetime="{{ post.date_iso }}">{{ post.date_label }}</time>
+        <span class="kind kind-pdf">PDF</span>
+        {% if post.pdf_pages %}<span class="dim">{{ post.pdf_pages }} pages</span>{% endif %}
+        <a class="source-link" href="{{ post.pdf_url }}" download>Download</a>
+        <a class="source-link" href="{{ post.pdf_url }}" target="_blank" rel="noopener">Open in a new tab</a>
+      </div>
+      {% if post.tags %}
+      <p class="tag-row">
+        {% for tag in post.tags %}{{ tag_pill(tag) }}{% endfor %}
+      </p>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="pdf-frame-wrap">
+    <object class="pdf-frame" data="{{ post.pdf_url }}#view=FitH" type="application/pdf">
+      <div class="pdf-fallback">
+        <p>Your browser will not display this PDF inline.</p>
+        <p><a class="button" href="{{ post.pdf_url }}" download>Download the PDF</a></p>
+      </div>
+    </object>
+  </div>
+
+  {% if post.sequence %}<div class="wrap">{{ sequence_nav(post) }}</div>{% endif %}
+
+  {% if bibtex %}<div class="wrap">{{ bibtex_block(bibtex) }}</div>{% endif %}
+
+  <footer class="post-foot">
+    <div class="wrap">
+      <a href="/blog/">&larr; All posts</a>
+      <a href="{{ post.pdf_url }}" download>Download the PDF</a>
+    </div>
+  </footer>
+</article>
+{% endblock %}

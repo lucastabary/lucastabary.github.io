@@ -1,0 +1,29 @@
+# ---------------------------------------------------------------------------
+# The blog's tag vocabulary: one entry per tag, under its canonical spelling.
+#
+#   description:  what the tag covers; the tooltip of its filter chip on /blog/
+#   aliases:      other spellings to rewrite to this one
+#
+# A post's tags are matched against names and aliases ignoring case, so `ml`,
+# `Ml` and `machine-learning` all become `ML` if it lists that alias. A tag
+# missing from this file is still published as written, so a post never needs
+# this file to build; add the tag here to give it a description and aliases.
+#
+# Check this list before tagging a post, and reuse a tag rather than coining a
+# near-duplicate.
+# ---------------------------------------------------------------------------
+
+demo:
+  description: Examples of what the site can render.
+
+meta:
+  description: Posts about this site and how it is built.
+
+notebooks:
+  description: >-
+    About Jupyter notebooks as a medium. Not every post written as a notebook:
+    the kind badge already says that.
+  aliases: [notebook, jupyter]
+
+notes:
+  description: Short, informal notes rather than finished write-ups.

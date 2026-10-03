@@ -1,0 +1,186 @@
+{# A BibTeX entry, folded, with a copy button (app.js). #}
+{% macro bibtex_block(bibtex, label='Cite this post') %}
+<details class="cite">
+  <summary>{{ label }}</summary>
+  <div class="cite-body">
+    <pre><code>{{ bibtex }}</code></pre>
+    <button type="button" class="cite-copy" data-copy>Copy</button>
+  </div>
+</details>
+{% endmacro %}
+
+{# A tag links to the blog filtered on it; on /blog/ itself, app.js filters in place. #}
+{% macro tag_pill(tag) %}<a class="tag" href="/blog/?tag={{ tag | lower | urlencode }}" data-tag-link="{{ tag | lower }}">{{ tag }}</a>{% endmacro %}
+
+{% macro post_card(post, show_project=True) %}
+<article class="post-card"
+         data-tags="{{ post.tags | join('|') | lower }}"
+         data-project="{{ post.project.slug if post.project else '_none' }}"
+         data-folder="{{ post.folder.key if post.folder else '' }}"
+         data-text="{{ post.search_text }}">
+  <time class="post-card-date" datetime="{{ post.date_iso }}">{{ post.date_label }}</time>
+  <div class="post-card-main">
+    <h3 class="post-card-title"><a href="{{ post.url }}">{{ post.title }}</a></h3>
+    {% if post.summary %}<p class="post-card-summary">{{ post.summary }}</p>{% endif %}
+    <div class="post-card-meta">
+      <span class="kind kind-{{ post.kind }}">{{ post.kind_label }}</span>
+      {% if post.reading_time %}<span class="dim">{{ post.reading_time }} min read</span>{% endif %}
+      {% if post.project and show_project %}
+      <a class="project-chip" href="{{ post.project.url }}">{{ post.project.short }}</a>
+      {% endif %}
+      {% if post.folder and post.folder.url != post.url %}
+      <a class="folder-chip" href="{{ post.folder.url }}">{{ post.folder.title }}</a>
+      {% endif %}
+      {% for tag in post.tags %}{{ tag_pill(tag) }}{% endfor %}
+    </div>
+  </div>
+</article>
+{% endmacro %}
+
+{% macro post_crumb(post) %}
+<p class="crumb">
+  <a href="/blog/">&larr; Blog</a>
+  {% if post.project %}
+  <span class="crumb-sep">/</span>
+  <a href="{{ post.project.url }}">{{ post.project.name }}</a>
+  {% endif %}
+  {% if post.parent %}
+  <span class="crumb-sep">/</span>
+  <a href="{{ post.parent.url }}">{{ post.parent.title }}</a>
+  {% endif %}
+</p>
+{% endmacro %}
+
+{% macro project_item(project) %}
+<article class="project">
+  {% if project.context %}<p class="project-meta">{{ project.context }}</p>{% endif %}
+  <h3><a href="{{ project.url }}">{{ project.name }}</a></h3>
+  <p class="project-text">{{ project.text }}</p>
+  {% if project.activity and config.show_activity | default(true) %}{{ activity_card(project.activity, (config.project_cards or {}).activity or 'heatmap') }}{% endif %}
+  <p class="project-foot">
+    {% if project.posts %}
+    <a href="{{ project.url }}">{{ project.posts | length }} post{{ '' if project.posts | length == 1 else 's' }} &rarr;</a>
+    {% else %}
+    <a href="{{ project.url }}">Project page &rarr;</a>
+    {% endif %}
+    {% for link in project.links %}<a class="dim-link" href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+  </p>
+</article>
+{% endmacro %}
+
+{# GitHub-style commit heatmap: one column per week (Monday on top), one square per day.
+   `weeks` keeps only the most recent columns; `labels` adds month and weekday names. #}
+{% macro activity_graph(activity, weeks=53, labels=True) %}
+{% set columns = activity.weeks[-weeks:] %}
+{% set first_week = activity.weeks | length - columns | length %}
+{% set step, cell = 13, 10 %}
+{% set left, top = (30 if labels else 0), (18 if labels else 0) %}
+{% set total = columns | sum(attribute='total') %}
+<figure class="activity{% if not labels %} activity-compact{% endif %}">
+  <svg viewBox="0 0 {{ left + columns | length * step - 3 }} {{ top + 7 * step - 3 }}"
+       role="img" aria-label="{{ total }} commits in the last {{ columns | length }} weeks">
+    {% if labels %}
+    {% for month in activity.months if month.week >= first_week %}
+    <text class="activity-label" x="{{ left + (month.week - first_week) * step }}" y="10">{{ month.label }}</text>
+    {% endfor %}
+    {% for row, name in [(0, 'Mon'), (2, 'Wed'), (4, 'Fri')] %}
+    <text class="activity-label" x="0" y="{{ top + row * step + 9 }}">{{ name }}</text>
+    {% endfor %}
+    {% endif %}
+    {% for column in columns %}
+    {% set x = left + loop.index0 * step %}
+    {% for day in column.days if day %}
+    <rect class="lvl-{{ day.level }}" x="{{ x }}" y="{{ top + loop.index0 * step }}" width="{{ cell }}" height="{{ cell }}" rx="2"><title>{{ day.count or 'No' }} commit{{ '' if day.count == 1 else 's' }} on {{ day.label }}</title></rect>
+    {% endfor %}
+    {% endfor %}
+  </svg>
+  <figcaption>
+    <span>{{ total }} commit{{ '' if total == 1 else 's' }} in the last {{ 'year' if columns | length >= 52 else (columns | length) ~ ' weeks' }}{% if activity.recent %} &middot; {{ activity.recent }} this month{% endif %}{% if labels and activity.last %} &middot; last on {{ activity.last }}{% endif %}</span>
+    {% if labels %}
+    <span class="activity-legend" aria-hidden="true">Less {% for level in range(5) %}<i class="lvl-{{ level }}"></i>{% endfor %} More</span>
+    {% endif %}
+  </figcaption>
+</figure>
+{% endmacro %}
+
+{# Commits per week over the project's whole life, first commit to today. The bars
+   stretch to the full width whatever the span; the axis labels are HTML placed in
+   percent, so the stretched SVG never distorts them. #}
+{% macro activity_lifetime(life, activity=None) %}
+{% set n, w, h = life.weeks | length, 10, 60 %}
+<figure class="activity activity-lifetime">
+  <svg viewBox="0 0 {{ n * w }} {{ h }}" preserveAspectRatio="none" role="img"
+       aria-label="{{ life.total }} commits over {{ n }} weeks since {{ life.first }}, peak {{ life.peak }} in a week">
+    <line class="activity-baseline" x1="0" y1="{{ h - 0.5 }}" x2="{{ n * w }}" y2="{{ h - 0.5 }}"/>
+    {% for week in life.weeks %}
+    {% if week.total %}
+    {% set bh = [(week.total / life.peak * (h - 2)) | round(1), 1.5] | max %}
+    <rect class="activity-bar" x="{{ loop.index0 * w + 1 }}" y="{{ h - bh }}" width="{{ w - 2 }}" height="{{ bh }}"><title>{{ week.total }} commit{{ '' if week.total == 1 else 's' }}, week of {{ week.label }}</title></rect>
+    {% endif %}
+    {% endfor %}
+  </svg>
+  <div class="activity-axis" aria-hidden="true">
+    {% for tick in life.ticks %}<span style="left: {{ (tick.pos * 100) | round(2) }}%">{{ tick.label }}</span>{% endfor %}
+  </div>
+  <figcaption>
+    <span>{{ life.total }} commit{{ '' if life.total == 1 else 's' }} since the first one on {{ life.first }}{% if activity and activity.recent %} &middot; {{ activity.recent }} this month{% endif %}{% if activity and activity.last %} &middot; last on {{ activity.last }}{% endif %}</span>
+    <span class="dim">peak {{ life.peak }} in a week</span>
+  </figcaption>
+</figure>
+{% endmacro %}
+
+{# Previous / next links between the posts of one folder, in reading order. #}
+{% macro sequence_nav(post) %}
+{% if post.sequence %}
+<nav class="sequence" aria-label="{{ post.sequence.title }}">
+  <p class="sequence-head">
+    <a href="{{ post.sequence.url }}">{{ post.sequence.title }}</a>
+    <span class="dim">{{ post.sequence.index }} / {{ post.sequence.total }}</span>
+  </p>
+  <div class="sequence-links">
+    {% if post.sequence.prev %}
+    <a class="sequence-link sequence-prev" href="{{ post.sequence.prev.url }}" rel="prev">
+      <span class="sequence-dir">&larr; Previous</span>
+      <span class="sequence-title">{{ post.sequence.prev.title }}</span>
+    </a>
+    {% else %}<span></span>{% endif %}
+    {% if post.sequence.next %}
+    <a class="sequence-link sequence-next" href="{{ post.sequence.next.url }}" rel="next">
+      <span class="sequence-dir">Next &rarr;</span>
+      <span class="sequence-title">{{ post.sequence.next.title }}</span>
+    </a>
+    {% endif %}
+  </div>
+</nav>
+{% endif %}
+{% endmacro %}
+
+{# Compact activity on a project card, in one of the styles of `project_cards.activity`:
+   heatmap (26 weeks), heatmap-year, sparkline or bars (weekly commits over a year). #}
+{% macro activity_card(activity, style='heatmap') %}
+{% if style == 'heatmap' %}{{ activity_graph(activity, weeks=26, labels=False) }}
+{% elif style == 'heatmap-year' %}{{ activity_graph(activity, weeks=53, labels=False) }}
+{% else %}
+{% set totals = activity.weeks | map(attribute='total') | list %}
+{% set peak = [totals | max, 1] | max %}
+{% set n, w, h = totals | length, 4, 34 %}
+<figure class="activity activity-compact activity-{{ style }}">
+  <svg viewBox="0 0 {{ n * w }} {{ h }}" preserveAspectRatio="none" role="img"
+       aria-label="Weekly commits over the last year, peak {{ peak }} in a week">
+    <line class="activity-baseline" x1="0" y1="{{ h - 0.5 }}" x2="{{ n * w }}" y2="{{ h - 0.5 }}"/>
+    {% if style == 'bars' %}
+    {% for t in totals %}
+    {% set bh = (t / peak * (h - 2)) | round(1) %}
+    {% if t %}<rect class="activity-bar" x="{{ loop.index0 * w + 0.5 }}" y="{{ h - bh }}" width="{{ w - 1 }}" height="{{ bh }}" rx=".6"><title>{{ t }} commit{{ '' if t == 1 else 's' }}, week of {{ activity.weeks[loop.index0].days[0].label }}</title></rect>{% endif %}
+    {% endfor %}
+    {% else %}
+    {% set points = [] %}
+    {% for t in totals %}{% set _ = points.append(((loop.index0 + 0.5) * w) ~ ',' ~ ((h - 2 - t / peak * (h - 6)) | round(1))) %}{% endfor %}
+    <polygon class="activity-area" points="{{ w * 0.5 }},{{ h }} {{ points | join(' ') }} {{ (n - 0.5) * w }},{{ h }}"/>
+    <polyline class="activity-line" points="{{ points | join(' ') }}"/>
+    {% endif %}
+  </svg>
+  <figcaption><span>{{ activity.total }} commit{{ '' if activity.total == 1 else 's' }} in the last year{% if activity.recent %} &middot; {{ activity.recent }} this month{% endif %}</span></figcaption>
+</figure>
+{% endif %}
+{% endmacro %}

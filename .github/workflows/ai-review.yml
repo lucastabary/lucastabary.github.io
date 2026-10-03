@@ -1,0 +1,96 @@
+name: AI review of posts
+
+# On demand only, to spend Copilot credits deliberately: add the `ai-review` label
+# to a pull request that touches posts/. The label is removed once the review is
+# posted, so adding it again asks for a new review (e.g. after fixes).
+on:
+  pull_request:
+    types: [labeled]
+    paths: ["posts/**"]
+
+# Least privilege: read the code, comment on the PR and remove the label.
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Only for the label, and only for branches of this repo: PRs from forks do not
+    # get secrets, and their content must not steer a model with a token.
+    if: >-
+      github.event.label.name == 'ai-review' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Collect the changed posts
+        id: posts
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          files=$(git diff --name-only --diff-filter=AM "$BASE_SHA"...HEAD -- posts/ \
+                  | grep -E '\.(md|markdown|ipynb|html?)$' | grep -v '/_' || true)
+          echo "$files"
+          if [ -z "$files" ]; then
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            python3 .github/scripts/ai_review_input.py review-input.md $files
+          fi
+
+      - name: Review with Copilot
+        id: review
+        if: steps.posts.outputs.found == 'true'
+        uses: actions/ai-inference@v1
+        with:
+          prompt-file: .github/prompts/post-review.prompt.yml
+          file_input: |
+            post: ./review-input.md
+          # Set the repository variable AI_REVIEW_MODEL to switch models.
+          model: ${{ vars.AI_REVIEW_MODEL || 'gpt-4.1' }}
+        env:
+          # Fine-grained PAT of the repo owner with the "Copilot Requests" permission.
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+
+      # The model answers in JSON (see the prompt); render it as a comment and count
+      # the "must fix" items.
+      - name: Post the review
+        id: report
+        if: steps.review.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          RESPONSE_FILE: ${{ steps.review.outputs.response-file }}
+          MODEL: ${{ vars.AI_REVIEW_MODEL || 'gpt-4.1' }}
+        run: |
+          python3 .github/scripts/ai_review_report.py "$RESPONSE_FILE" comment.md "$MODEL"
+          cat comment.md >> "$GITHUB_STEP_SUMMARY"
+          gh pr comment "$PR" --body-file comment.md
+
+      # A red check when the review found blocking problems or could not be read,
+      # so it can be required before merging.
+      - name: Fail on "must fix" items
+        if: steps.report.outcome == 'success' && steps.report.outputs.must_fix != '0'
+        env:
+          MUST_FIX: ${{ steps.report.outputs.must_fix }}
+        run: |
+          if [ "$MUST_FIX" = "-1" ]; then
+            echo "::error::The review is not valid JSON; see the PR comment."
+          else
+            echo "::error::The review found $MUST_FIX must-fix item(s); see the PR comment."
+          fi
+          exit 1
+
+      - name: Remove the label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR" --remove-label ai-review || true

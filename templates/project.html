@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import post_card, activity_lifetime %}
+
+{% block title %}{{ project.name }}{% endblock %}
+{% block description %}{{ project.text }}{% endblock %}
+{% block og_title %}{{ project.name }}{% endblock %}
+{% block og_description %}{{ project.text }}{% endblock %}
+
+{% block content %}
+<section class="page-head">
+  <div class="wrap">
+    <p class="crumb"><a href="/projects/">&larr; Projects</a></p>
+    {% if project.context %}<p class="eyebrow">{{ project.context }}</p>{% endif %}
+    <h1>{{ project.name }}</h1>
+    <p class="lede">{{ project.text }}</p>
+    {% if project.links %}
+    <p class="hero-links">
+      {% for link in project.links %}<a href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+    </p>
+    {% endif %}
+  </div>
+</section>
+
+{% if project.lifetime and config.show_activity | default(true) %}
+<section class="band">
+  <div class="wrap">
+    <h2 class="section-title">Activity
+      {% if project.repo_url %}<a class="section-more" href="{{ project.repo_url }}/commits">Commit history &rarr;</a>{% endif %}
+    </h2>
+    {{ activity_lifetime(project.lifetime, project.activity) }}
+  </div>
+</section>
+{% endif %}
+
+<section class="band">
+  <div class="wrap">
+    <h2 class="section-title">Notes from this project
+      {% if project.posts %}<a class="section-more" href="/blog/?project={{ project.slug }}">Filter them in the blog &rarr;</a>{% endif %}
+    </h2>
+    {% if project.posts %}
+    <div class="post-list">
+      {% for post in project.posts %}{{ post_card(post, show_project=False) }}{% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">No notes from this project yet.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

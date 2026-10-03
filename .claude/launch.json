@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "site",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["build.py", "--drafts", "--offline", "--serve", "8000", "--watch"],
+      "port": 8000
+    }
+  ]
+}

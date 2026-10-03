@@ -750,9 +750,21 @@ def clean_output(out_dir: Path) -> None:
     so clear read-only flags and retry instead of failing the whole build. The
     directory is never removed, only emptied — Windows refuses to delete a
     folder that any process is still watching.
+
+    The read-only flag can sit at any depth: OneDrive sets it on folders it
+    syncs (e.g. `_site/blog/<slug>/`), and Windows refuses to remove a
+    read-only directory. So `rmtree` clears the flag on whatever path fails and
+    retries it, rather than only on the top-level child.
     """
     if not out_dir.exists():
         return
+
+    def clear_readonly_and_retry(func, path, exc):
+        try:
+            os.chmod(path, stat.S_IWRITE | stat.S_IREAD)
+        except OSError:
+            raise exc from None
+        func(path)
 
     last_error: OSError | None = None
     for attempt in range(5):
@@ -760,7 +772,7 @@ def clean_output(out_dir: Path) -> None:
         for child in out_dir.iterdir():
             try:
                 if child.is_dir() and not child.is_symlink():
-                    shutil.rmtree(child)
+                    shutil.rmtree(child, onexc=clear_readonly_and_retry)
                 else:
                     child.unlink()
             except OSError as exc:

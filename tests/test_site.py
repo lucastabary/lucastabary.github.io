@@ -133,3 +133,17 @@ def test_show_activity_hides_charts_but_keeps_busiest_first(site, monkeypatch):
 
     out = with_activity(True)
     assert 'class="activity' in (out / "projects" / "index.html").read_text(encoding="utf-8")
+
+
+def test_clean_output_clears_read_only_flags_at_any_depth(tmp_path):
+    # OneDrive marks synced folders read-only, e.g. _site/blog/<slug>/, and
+    # Windows refuses to remove a read-only directory.
+    import stat
+    out = tmp_path / "_site"
+    nested = out / "blog" / "some-post"
+    nested.mkdir(parents=True)
+    (out / "blog" / "index.html").write_text("x", encoding="utf-8")
+    (out / "blog" / "index.html").chmod(stat.S_IREAD)
+    nested.chmod(stat.S_IREAD)
+    build.clean_output(out)
+    assert out.is_dir() and not any(out.iterdir())

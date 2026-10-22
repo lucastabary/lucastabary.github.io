@@ -21,15 +21,15 @@ pages:
 author:
   name: Lucas Tabary
   # Small line above the name on the About page.
-  role: Telecom Nancy (IAMD) · Master IMSD, Université de Lorraine
+  role: Telecom Nancy (IAMD, biomedical specialisation) · Master IMSD, Université de Lorraine
   # One line under your name on the home page.
   intro: >-
-    Engineering student working on machine learning, computational
-    neuroscience and interpretability.
+    Engineering student in machine learning, interested in interpretability,
+    neuroscience and biology.
   # One or two sentences: the About page lede and its meta description.
   bio: >-
-    I study how learning systems represent structure — in artificial networks
-    and in biological ones — and how to read it back from their internal states.
+    Engineering student in AI and data science. This site gathers the projects
+    I work on and where each one stands.
   email: lucas.tabary01@gmail.com
   # A PDF of your CV: put it in static/files/ and uncomment. Linked from the
   # About and Publications pages.
@@ -48,43 +48,40 @@ author:
 
 # The About page narrative, in Markdown, first person. Shown under the bio.
 about: |
-  I am an engineering student at Telecom Nancy, in the IAMD track (artificial
-  intelligence and big data), and I am following the IMSD Master's
-  (mathematical engineering for data science) at Université de Lorraine in
-  parallel. The
-  combination is deliberate: engineering taught me to build models, statistics
-  taught me to distrust them until the evidence is in.
+  I'm in my last year at Telecom Nancy, in the IAMD track (artificial
+  intelligence and big data) with the biomedical specialisation, and in the
+  IMSD Master's at Université de Lorraine (mathematical engineering for data
+  science). One side is mostly about building models, the other about the
+  maths and statistics underneath, and I like having both.
 
-  What draws me to research is a question that keeps coming back in different
-  forms: *what does a network actually learn about the structure of its data?*
-  I approach it from three sides: the representations of deep networks, the
-  dynamics of biological circuits, and interpretability, which turns the
-  question into a method: read a model's internal states to find out what it
-  computes.
+  The projects I pick up outside of class tend to end on the same question:
+  what did the model actually pick up? In the NIRS project, it was whether a
+  latent space reflected heat stress in plants or just the way the spectra
+  were measured, and mostly it was the latter. In kAIsparov, it's whether a
+  graph neural network learns anything that looks like chess knowledge.
 
-  This site is where I think out loud. Most posts are notebooks written next to
-  the code they describe, published as soon as they are worth reading rather
-  than when they are finished.
+  Later on I'd like to stay in academia, doing both research and teaching.
+
+  Everything here is work in progress, and each project page says where it
+  stands.
 
 # Shown on the About page.
 interests:
   - name: Representation learning
     text: >-
-      What a trained network encodes, and why some representations transfer
-      while others only fit. I work with latent-variable models (VAEs,
-      dimensionality reduction) and look for structure a model found without
-      being told to.
+      What a trained network encodes in its internal representations. So far
+      I've mostly explored it through dimensionality reduction (PCA, t-SNE,
+      UMAP) on near-infrared spectra, in the NIRS project.
   - name: Computational neuroscience
     text: >-
-      Recurrent and spiking networks as models of cognitive processes, and the
-      reverse question: which ideas from biological circuits make artificial
-      architectures learn better.
+      Recurrent and spiking networks as models of the brain, and what ideas
+      from biological circuits could bring to artificial networks. Something
+      I've read about more than worked on, for now.
   - name: Interpretability
     text: >-
-      Understanding what a trained model actually does by looking inside it:
-      what its internal states encode, which features and mechanisms drive a
-      prediction, and what that access makes possible, from detecting failures
-      to steering or correcting the model.
+      Understanding what a model actually does by looking at its internal
+      states. It's the long-term goal of kAIsparov: what a graph neural network
+      learns about chess.
 
 # Add a project by appending an entry here. Each one gets its own page at
 # /projects/<slug>/.

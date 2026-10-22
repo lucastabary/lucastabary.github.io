@@ -135,6 +135,25 @@ def test_show_activity_hides_charts_but_keeps_busiest_first(site, monkeypatch):
     assert 'class="activity' in (out / "projects" / "index.html").read_text(encoding="utf-8")
 
 
+def test_project_page_shows_details_and_hides_empty_notes(site, monkeypatch):
+    load = build.yaml.safe_load
+
+    def patched(text):
+        data = load(text)
+        if isinstance(data, dict) and "projects" in data:
+            data["projects"] = [{
+                "name": "Toy project", "slug": "toy", "text": "One-line summary.",
+                "details": "### What I did\n\nA *first* attempt.\n",
+            }]
+        return data
+    monkeypatch.setattr(build.yaml, "safe_load", patched)
+
+    page = (site() / "projects" / "toy" / "index.html").read_text(encoding="utf-8")
+    assert "<h3" in page and "What I did" in page and "<em>first</em>" in page
+    # No notes published from the repo: no section announcing that there are none.
+    assert "Notes from this project" not in page
+
+
 def test_clean_output_clears_read_only_flags_at_any_depth(tmp_path):
     # OneDrive marks synced folders read-only, e.g. _site/blog/<slug>/, and
     # Windows refuses to remove a read-only directory.

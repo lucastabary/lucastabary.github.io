@@ -89,6 +89,9 @@ interests:
 # Add a project by appending an entry here. Each one gets its own page at
 # /projects/<slug>/.
 #
+#   text:            the summary, on cards and at the top of the project page
+#   details:         optional Markdown, shown only on the project page under
+#                    the summary (what was done, what it taught me, what next)
 #   featured: true   also show it on the home page
 #   repo:            owner/name on GitHub
 #   short:           compact label for chips and post badges (defaults to name)
@@ -99,6 +102,31 @@ interests:
 #   image:           preview image when the project page is shared, instead of
 #                    the generated one (a /rooted path or a full URL)
 projects:
+  - name: "Priism: separating a mix into one track per source"
+    slug: priism
+    short: Priism
+    context: Personal research project · in progress
+    featured: true
+    repo: lucastabary/priism
+    text: >-
+      Music source separation without a fixed list of stems: the model decides
+      how many sources a mix contains and returns one track per source. Code
+      not public yet.
+    details: |
+      ### The idea
+      Separation models usually return a fixed list of stems: drums, bass,
+      vocals, other. Priism drops the list. The model decides how many sources a
+      mix contains and returns one track per source, even when two instruments
+      are of the same kind.
+
+      ### What I did
+      A pre-trained BS-RoFormer core with 16 output slots that the model fills
+      itself, trained with a permutation-invariant loss on synthetic tracks whose
+      stems sum exactly to the mix.
+
+      ### Next
+      Training on real multitracks, and first results on real recordings.
+
   - name: "kAIsparov: teaching chess to graph neural networks"
     slug: kaisparov
     short: kAIsparov
@@ -107,31 +135,29 @@ projects:
     repo: lucastabary/kAIsparov
     blog: blog
     text: >-
-      A research platform that represents the chess board as a graph (squares
-      as nodes, piece movements as typed edges) to compare GNN architectures and
-      training methods on identical footing, starting with a relational GCN
-      trained by PPO self-play. The deeper goal is interpretability: what a GNN
-      learns about chess, and how information flows along piece relations.
+      Teaching chess to graph neural networks: the board is a graph, a
+      relational GCN learns by self-play, and the end goal is to understand
+      what it learns. The training loop works; the agent does not beat the
+      baselines yet.
+    details: |
+      ### What I did
+      A board-as-graph encoding, a relational GCN actor–critic that scores
+      moves as edges, PPO self-play, and an Elo arena against simple baselines.
+      Architectures are swappable, and a skill benchmark (mate in one, forks…)
+      compares models on what they can do, not only on win rates.
+
+      ### What I learned
+      Most of the work was not the network but the rules, the action space and
+      the evaluation, and every shortcut came back later.
+
+      ### Next
+      Training until the agent beats the baselines, then probing what its node
+      embeddings encode.
     links:
       - label: Code
         url: https://github.com/lucastabary/kAIsparov
 
-  - name: Symbolic music generation with recurrent neural networks
-    slug: music-generation-rnn
-    short: Music generation
-    context: Personal project
-    featured: true
-    repo: lucastabary/Project4
-    blog: blog
-    text: >-
-      A study of LSTM architectures for MIDI sequence generation, focused on how
-      well the model captures long-range temporal structure in classical music
-      corpora.
-    links:
-      - label: Code
-        url: https://github.com/lucastabary/Project4/
-
-  - name: Near-infrared spectroscopy analysis of plant specimens
+  - name: Near-infrared spectra of heat-stressed crops
     slug: nirs-spectroscopy
     short: NIRS spectroscopy
     context: Research initiation project • Telecom Nancy
@@ -139,9 +165,24 @@ projects:
     repo: lucastabary/PIDR_RICOCHET
     blog: blog
     text: >-
-      Latent space exploration of NIRS measurements for the chemical
-      characterisation of plant specimens, using dimensionality reduction
-      (PCA, t-SNE, VAE) ahead of classification.
+      A research initiation project with Dorian Geneste, supervised by Alain
+      Gély and Lydia Boudjeloud-Assala (LORIA) within the ANR RICOCHET project:
+      what near-infrared spectra of sorghum and rapeseed reveal about heat
+      stress.
+    details: |
+      ### What we did
+      PCA, t-SNE and UMAP on near-infrared spectra of sorghum and rapeseed grown
+      under different heat-stress scenarios, plus an autoencoder attempt.
+
+      ### What we found
+      The spectra are organised first by the tissue measured (leaves vs ground
+      grain) and by the measurement campaign. On ground grain, recurrent stress
+      seems to land apart from the controls, but with so few samples this is a
+      lead, not a result. The autoencoders did not give a usable latent space.
+
+      ### Next
+      Test that lead with a cross-validated model against a permutation
+      baseline.
     links:
       - label: Code
         url: https://github.com/lucastabary/PIDR_RICOCHET

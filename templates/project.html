@@ -21,6 +21,14 @@
   </div>
 </section>
 
+{% if project.details %}
+<section class="band band-tight">
+  <div class="wrap post-body about-prose">
+    {{ project.details | markdown | safe }}
+  </div>
+</section>
+{% endif %}
+
 {% if project.lifetime and config.show_activity | default(true) %}
 <section class="band">
   <div class="wrap">
@@ -32,18 +40,18 @@
 </section>
 {% endif %}
 
+{# Shown only once the project's repo has published notes: an empty section
+   would only tell visitors there is nothing here. #}
+{% if project.posts %}
 <section class="band">
   <div class="wrap">
     <h2 class="section-title">Notes from this project
-      {% if project.posts %}<a class="section-more" href="/blog/?project={{ project.slug }}">Filter them in the blog &rarr;</a>{% endif %}
+      <a class="section-more" href="/blog/?project={{ project.slug }}">Filter them in the blog &rarr;</a>
     </h2>
-    {% if project.posts %}
     <div class="post-list">
       {% for post in project.posts %}{{ post_card(post, show_project=False) }}{% endfor %}
     </div>
-    {% else %}
-    <p class="empty">No notes from this project yet.</p>
-    {% endif %}
   </div>
 </section>
+{% endif %}
 {% endblock %}

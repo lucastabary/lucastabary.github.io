@@ -21,15 +21,15 @@ pages:
 author:
   name: Lucas Tabary
   # Small line above the name on the About page.
-  role: Telecom Nancy (IAMD) · Master IMSD, Université de Lorraine
+  role: Telecom Nancy (IAMD, biomedical specialisation) · Master IMSD, Université de Lorraine
   # One line under your name on the home page.
   intro: >-
-    Engineering student working on machine learning, computational
-    neuroscience and interpretability.
+    Engineering student in machine learning, interested in interpretability,
+    neuroscience and biology.
   # One or two sentences: the About page lede and its meta description.
   bio: >-
-    I study how learning systems represent structure — in artificial networks
-    and in biological ones — and how to read it back from their internal states.
+    Engineering student in AI and data science. This site gathers the projects
+    I work on and where each one stands.
   email: lucas.tabary01@gmail.com
   # A PDF of your CV: put it in static/files/ and uncomment. Linked from the
   # About and Publications pages.
@@ -48,47 +48,47 @@ author:
 
 # The About page narrative, in Markdown, first person. Shown under the bio.
 about: |
-  I am an engineering student at Telecom Nancy, in the IAMD track (artificial
-  intelligence and big data), and I am following the IMSD Master's
-  (mathematical engineering for data science) at Université de Lorraine in
-  parallel. The
-  combination is deliberate: engineering taught me to build models, statistics
-  taught me to distrust them until the evidence is in.
+  I'm in my last year at Telecom Nancy, in the IAMD track (artificial
+  intelligence and big data) with the biomedical specialisation, and in the
+  IMSD Master's at Université de Lorraine (mathematical engineering for data
+  science). One side is mostly about building models, the other about the
+  maths and statistics underneath, and I like having both.
 
-  What draws me to research is a question that keeps coming back in different
-  forms: *what does a network actually learn about the structure of its data?*
-  I approach it from three sides: the representations of deep networks, the
-  dynamics of biological circuits, and interpretability, which turns the
-  question into a method: read a model's internal states to find out what it
-  computes.
+  The projects I pick up outside of class tend to end on the same question:
+  what did the model actually pick up? In the NIRS project, it was whether a
+  latent space reflected heat stress in plants or just the way the spectra
+  were measured, and mostly it was the latter. In kAIsparov, it's whether a
+  graph neural network learns anything that looks like chess knowledge.
 
-  This site is where I think out loud. Most posts are notebooks written next to
-  the code they describe, published as soon as they are worth reading rather
-  than when they are finished.
+  Later on I'd like to stay in academia, doing both research and teaching.
+
+  Everything here is work in progress, and each project page says where it
+  stands.
 
 # Shown on the About page.
 interests:
   - name: Representation learning
     text: >-
-      What a trained network encodes, and why some representations transfer
-      while others only fit. I work with latent-variable models (VAEs,
-      dimensionality reduction) and look for structure a model found without
-      being told to.
+      What a trained network encodes in its internal representations. So far
+      I've mostly explored it through dimensionality reduction (PCA, t-SNE,
+      UMAP) on near-infrared spectra, in the NIRS project.
   - name: Computational neuroscience
     text: >-
-      Recurrent and spiking networks as models of cognitive processes, and the
-      reverse question: which ideas from biological circuits make artificial
-      architectures learn better.
+      Recurrent and spiking networks as models of the brain, and what ideas
+      from biological circuits could bring to artificial networks. Something
+      I've read about more than worked on, for now.
   - name: Interpretability
     text: >-
-      Understanding what a trained model actually does by looking inside it:
-      what its internal states encode, which features and mechanisms drive a
-      prediction, and what that access makes possible, from detecting failures
-      to steering or correcting the model.
+      Understanding what a model actually does by looking at its internal
+      states. It's the long-term goal of kAIsparov: what a graph neural network
+      learns about chess.
 
 # Add a project by appending an entry here. Each one gets its own page at
 # /projects/<slug>/.
 #
+#   text:            the summary, on cards and at the top of the project page
+#   details:         optional Markdown, shown only on the project page under
+#                    the summary (what was done, what it taught me, what next)
 #   featured: true   also show it on the home page
 #   repo:            owner/name on GitHub
 #   short:           compact label for chips and post badges (defaults to name)
@@ -99,6 +99,31 @@ interests:
 #   image:           preview image when the project page is shared, instead of
 #                    the generated one (a /rooted path or a full URL)
 projects:
+  - name: "Priism: separating a mix into one track per source"
+    slug: priism
+    short: Priism
+    context: Personal research project · in progress
+    featured: true
+    repo: lucastabary/priism
+    text: >-
+      Music source separation without a fixed list of stems: the model decides
+      how many sources a mix contains and returns one track per source. Code
+      not public yet.
+    details: |
+      ### The idea
+      Separation models usually return a fixed list of stems: drums, bass,
+      vocals, other. Priism drops the list. The model decides how many sources a
+      mix contains and returns one track per source, even when two instruments
+      are of the same kind.
+
+      ### What I did
+      A pre-trained BS-RoFormer core with 16 output slots that the model fills
+      itself, trained with a permutation-invariant loss on synthetic tracks whose
+      stems sum exactly to the mix.
+
+      ### Next
+      Training on real multitracks, and first results on real recordings.
+
   - name: "kAIsparov: teaching chess to graph neural networks"
     slug: kaisparov
     short: kAIsparov
@@ -107,31 +132,29 @@ projects:
     repo: lucastabary/kAIsparov
     blog: blog
     text: >-
-      A research platform that represents the chess board as a graph (squares
-      as nodes, piece movements as typed edges) to compare GNN architectures and
-      training methods on identical footing, starting with a relational GCN
-      trained by PPO self-play. The deeper goal is interpretability: what a GNN
-      learns about chess, and how information flows along piece relations.
+      Teaching chess to graph neural networks: the board is a graph, a
+      relational GCN learns by self-play, and the end goal is to understand
+      what it learns. The training loop works; the agent does not beat the
+      baselines yet.
+    details: |
+      ### What I did
+      A board-as-graph encoding, a relational GCN actor–critic that scores
+      moves as edges, PPO self-play, and an Elo arena against simple baselines.
+      Architectures are swappable, and a skill benchmark (mate in one, forks…)
+      compares models on what they can do, not only on win rates.
+
+      ### What I learned
+      Most of the work was not the network but the rules, the action space and
+      the evaluation, and every shortcut came back later.
+
+      ### Next
+      Training until the agent beats the baselines, then probing what its node
+      embeddings encode.
     links:
       - label: Code
         url: https://github.com/lucastabary/kAIsparov
 
-  - name: Symbolic music generation with recurrent neural networks
-    slug: music-generation-rnn
-    short: Music generation
-    context: Personal project
-    featured: true
-    repo: lucastabary/Project4
-    blog: blog
-    text: >-
-      A study of LSTM architectures for MIDI sequence generation, focused on how
-      well the model captures long-range temporal structure in classical music
-      corpora.
-    links:
-      - label: Code
-        url: https://github.com/lucastabary/Project4/
-
-  - name: Near-infrared spectroscopy analysis of plant specimens
+  - name: Near-infrared spectra of heat-stressed crops
     slug: nirs-spectroscopy
     short: NIRS spectroscopy
     context: Research initiation project • Telecom Nancy
@@ -139,9 +162,24 @@ projects:
     repo: lucastabary/PIDR_RICOCHET
     blog: blog
     text: >-
-      Latent space exploration of NIRS measurements for the chemical
-      characterisation of plant specimens, using dimensionality reduction
-      (PCA, t-SNE, VAE) ahead of classification.
+      A research initiation project with Dorian Geneste, supervised by Alain
+      Gély and Lydia Boudjeloud-Assala (LORIA) within the ANR RICOCHET project:
+      what near-infrared spectra of sorghum and rapeseed reveal about heat
+      stress.
+    details: |
+      ### What we did
+      PCA, t-SNE and UMAP on near-infrared spectra of sorghum and rapeseed grown
+      under different heat-stress scenarios, plus an autoencoder attempt.
+
+      ### What we found
+      The spectra are organised first by the tissue measured (leaves vs ground
+      grain) and by the measurement campaign. On ground grain, recurrent stress
+      seems to land apart from the controls, but with so few samples this is a
+      lead, not a result. The autoencoders did not give a usable latent space.
+
+      ### Next
+      Test that lead with a cross-validated model against a permutation
+      baseline.
     links:
       - label: Code
         url: https://github.com/lucastabary/PIDR_RICOCHET

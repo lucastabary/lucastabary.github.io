@@ -6,14 +6,14 @@
 title: Lucas Tabary
 url: https://lucastabary.github.io
 description: >-
-  Research notes on machine learning, computational neuroscience and
-  interpretability, by an engineering student in AI and statistics.
+  Projects by an engineering student in AI and data science, interested in
+  interpretability, neuroscience and biology.
 lang: en
 
 # Browser-tab titles. Each should say what the page is about; the author's name
 # is appended after it (" · Lucas Tabary"), never put first.
 pages:
-  home: Research notes on machine learning, neuroscience and interpretability
+  home: Machine learning, interpretability, neuroscience and biology
   blog: "Blog: notes, notebooks and experiments"
   projects: "Projects: research and personal work"
   about: "About: background and research interests"
@@ -111,10 +111,9 @@ projects:
       not public yet.
     details: |
       ### The idea
-      Separation models usually return a fixed list of stems: drums, bass,
-      vocals, other. Priism drops the list. The model decides how many sources a
-      mix contains and returns one track per source, even when two instruments
-      are of the same kind.
+      Separation models usually return a fixed list of stems (drums, bass,
+      vocals, other), so two instruments of the same kind end up on one track.
+      Priism has no list: two 303s playing at once come out on two tracks.
 
       ### What I did
       A pre-trained BS-RoFormer core with 16 output slots that the model fills
